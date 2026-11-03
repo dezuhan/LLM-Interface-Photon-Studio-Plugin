@@ -189,6 +189,16 @@ node tools/images-test.cjs      # 13 tests — mime detection, 1 MB ladder, clip
 
 ## Changelog
 
+### 0.3.6
+
+- Fixed the operation cards collapsing into thin bars: the message list is a flex column, and its
+  children were shrinking instead of scrolling. `.messages > * { flex: 0 0 auto }` keeps every card
+  at full height and lets the transcript scroll.
+- Operation cards now stay **expanded while the turn runs** (each shows `· running`, then
+  `· done` / `· failed`) and **fold automatically when the turn ends**, so a finished chat stays
+  compact. They are plain `<details>` with a chevron, so any card can be reopened with a click.
+  Cards restored from a saved conversation start folded.
+
 ### 0.3.5
 
 - Settings tidy-up: the conversation actions are a real 2×2 grid with equal column widths

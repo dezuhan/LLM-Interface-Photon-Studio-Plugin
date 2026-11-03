@@ -240,6 +240,12 @@ select:focus-visible {
   border-radius: 26px;
 }
 
+/* Flex children must not shrink: without this the operation cards get squashed into
+   thin bars instead of the list scrolling. */
+.messages > * {
+  flex: 0 0 auto;
+}
+
 .empty {
   margin: 0;
   color: var(--ag-muted);
@@ -383,12 +389,31 @@ select:focus-visible {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-height: 24px;
   padding: 5px 8px;
   cursor: pointer;
   color: var(--ag-muted);
   font-size: 10px;
   font-weight: 600;
   list-style: none;
+}
+
+/* collapse affordance: chevron points right when closed, down when open */
+.tool > summary::after {
+  content: "";
+  flex: none;
+  width: 8px;
+  height: 8px;
+  margin-left: auto;
+  background-color: currentColor;
+  -webkit-mask: var(--ag-chevron) center / 8px 8px no-repeat;
+  mask: var(--ag-chevron) center / 8px 8px no-repeat;
+  transform: rotate(-90deg);
+  transition: transform 0.19s ease;
+}
+
+.tool[open] > summary::after {
+  transform: rotate(0deg);
 }
 
 .tool > summary::-webkit-details-marker {

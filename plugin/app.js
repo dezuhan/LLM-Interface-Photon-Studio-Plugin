@@ -200,13 +200,20 @@ function renderAttachments(images) {
   return row;
 }
 
-function addToolCard(name, args) {
+const TOOL_STATE_LABEL = { ok: "done", error: "failed", denied: "declined", pending: "running" };
+
+function addToolCard(name, args, options) {
   if (el.emptyHint && el.emptyHint.parentNode) el.emptyHint.remove();
+  const streaming = Boolean(options && options.streaming);
   const card = document.createElement("details");
   card.className = "tool";
-  card.dataset.state = "pending";
+  card.dataset.state = streaming ? "pending" : "ok";
+  // Streaming cards stay open so the work is visible; restored history stays folded.
+  card.open = streaming;
   const summary = document.createElement("summary");
-  summary.textContent = name.replace(/^photon_/, "");
+  const label = name.replace(/^photon_/, "");
+  summary.textContent = streaming ? label + " · running" : label;
+  summary.dataset.label = label;
   const code = document.createElement("pre");
   code.className = "code";
   code.textContent = JSON.stringify(args || {}, null, 1);
@@ -219,11 +226,18 @@ function addToolCard(name, args) {
 function updateToolCard(card, state, output) {
   if (!card) return;
   card.dataset.state = state;
+  const summary = card.querySelector("summary");
+  if (summary) {
+    const label = summary.dataset.label || summary.textContent;
+    summary.dataset.label = label;
+    summary.textContent = label + " · " + (TOOL_STATE_LABEL[state] || state);
+  }
   if (output === undefined) return;
   const code = card.querySelector(".code");
   if (!code) return;
   const text = typeof output === "string" ? output : JSON.stringify(output, null, 1);
   code.textContent = code.textContent + "\n→ " + (text.length > 1400 ? text.slice(0, 1400) + "…" : text);
+  scrollToEnd();
 }
 
 /* ---------- settings ---------- */
@@ -612,7 +626,7 @@ async function send() {
     shouldStop: () => stopRequested,
     onEvent(event) {
       if (event.type === "assistant" && event.text) addMessage("assistant", event.text);
-      else if (event.type === "tool") cards.push(addToolCard(event.name, event.arguments));
+      else if (event.type === "tool") cards.push(addToolCard(event.name, event.arguments, { streaming: true }));
       else if (event.type === "result") {
         const card = cards.find((item) => item.dataset.state === "pending");
         updateToolCard(card, "ok", event.output);
@@ -648,6 +662,9 @@ async function send() {
     running = false;
     el.send.disabled = false;
     el.stop.hidden = true;
+    // The turn is over: fold the operation cards so the transcript stays compact.
+    // They are plain <details>, so the user can reopen any of them.
+    for (const card of cards) card.open = false;
     if (window.syncCustomSelects) window.syncCustomSelects();
   }
 }
