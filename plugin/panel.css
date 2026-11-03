@@ -162,12 +162,6 @@ select:focus-visible {
   min-width: 0;
 }
 
-.sep {
-  margin-top: 4px;
-  padding-top: 8px;
-  border-top: 1px solid var(--ag-line);
-}
-
 .tab {
   height: 24px;
   padding: 0 10px;
@@ -517,7 +511,18 @@ textarea,
   color: var(--ag-text);
   font-size: var(--ag-text-base);
   line-height: var(--ag-leading);
+}
+
+textarea {
   resize: vertical;
+  min-height: 56px;
+}
+
+/* single-line inputs line up with select triggers and buttons (24px) */
+.input {
+  height: var(--ag-control-height);
+  padding: 0 8px;
+  line-height: 22px;
 }
 
 textarea::placeholder,
@@ -530,8 +535,38 @@ textarea::placeholder,
   gap: 6px;
 }
 
+/* equal columns: flex-basis 0 keeps both buttons the same width regardless of their label */
 .actions .button {
-  flex: 1 1 auto;
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.footer-actions {
+  padding-top: 8px;
+  border-top: 1px solid var(--ag-line);
+}
+
+/* grouped block with its own heading (Conversations, …) */
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--ag-line);
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.grid2 .button {
+  width: 100%;
+}
+
+.stats {
+  font-variant-numeric: tabular-nums;
 }
 
 /* Icon-only button: square, same height as the row, tooltip carries the label. */

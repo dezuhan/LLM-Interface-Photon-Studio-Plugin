@@ -3,7 +3,7 @@
   "sdkVersion": 1,
   "id": "photon-llm-interface",
   "name": "Photon LLM Interface",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "main": "index.html",
   "panels": [
     {

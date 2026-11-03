@@ -189,6 +189,15 @@ node tools/images-test.cjs      # 13 tests — mime detection, 1 MB ladder, clip
 
 ## Changelog
 
+### 0.3.5
+
+- Settings tidy-up: the conversation actions are a real 2×2 grid with equal column widths
+  (`flex-basis: 0` instead of `auto`, so labels no longer stretch buttons unevenly), grouped under
+  a **Conversations** section with the usage line underneath, and **Save / Test connection** moved
+  into their own divided row.
+- Every single-line control is now the same 24 px tall (Provider, Base URL, Model, Temperature,
+  Max steps, allowlist); multi-line textarea keeps its own bigger box. Unused `.sep` rule removed.
+
 ### 0.3.4
 
 - Project renamed from `llm-interface` to **photon-llm-interface**: the folder and the manifest
