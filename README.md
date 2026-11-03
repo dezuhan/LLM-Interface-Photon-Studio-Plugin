@@ -1,6 +1,6 @@
-# AI Agent — Photon Studio plugin
+# Photon LLM Interface
 
-Bring-your-own-key AI agent that edits the open Photon document. Paste an API key, pick a model
+Bring-your-own-key AI agent panel for Photon Studio. Paste an API key, pick a model
 (OpenAI, Anthropic, Gemini, DeepSeek, OpenRouter, Groq, or any local OpenAI-compatible server),
 and ask for an edit in plain language. The plugin itself acts as the agent runtime: it exposes
 Photon's editor operations as tools and runs the tool loop — no external harness, no MCP server,
@@ -96,8 +96,9 @@ Next (see Roadmap): streaming-ish narration, session history, cost display, prom
 
 ## Install
 
-1. Photon Studio → Preferences → Plug-ins → install the `plugin/` folder of this repository.
-2. Open the panel from **Plugins → AI Agent** (or `Ctrl+Shift+A`).
+1. Photon Studio → Preferences → Plug-ins → install the `plugin/` folder of this repository
+   (`photon-llm-interface/plugin`). The plugin is listed as **Photon LLM Interface**.
+2. Open the panel from **Plugins → AI Agent** (or `Ctrl+Shift+A`); the panel tab is **AI Agent**.
 3. Go to **Settings**, choose the provider and fill in base URL + model.
 4. Press **Set key** and paste the API key in Photon's own dialog.
 5. Press **Test connection**, then chat.
@@ -187,6 +188,12 @@ node tools/images-test.cjs      # 13 tests — mime detection, 1 MB ladder, clip
   model to ignore instructions found there, but a confirmation dialog is still the real guard.
 
 ## Changelog
+
+### 0.3.4
+
+- Project renamed from `llm-interface` to **photon-llm-interface**: the folder and the manifest
+  `name` follow the new name. The plugin id (`photon-llm-interface`) and the panel tab
+  (**AI Agent**) are unchanged — the short label keeps fitting the 380 px minimum width.
 
 ### 0.3.3
 
