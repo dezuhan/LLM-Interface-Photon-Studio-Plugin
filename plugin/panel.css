@@ -407,6 +407,82 @@ select:focus-visible {
   gap: 6px;
 }
 
+/* ---------- image attachments ---------- */
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.chips[hidden] {
+  display: none;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 3px 5px;
+  border-radius: var(--ag-radius-control);
+  background: var(--ag-raise), var(--ag-control);
+  box-shadow: var(--ag-hairline);
+  font-size: 10px;
+  color: var(--ag-muted);
+}
+
+.chip-thumb {
+  width: 26px;
+  height: 26px;
+  border-radius: 4px;
+  object-fit: cover;
+  background: var(--ph-black-3, rgba(0, 0, 0, 0.3));
+}
+
+.chip-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 13px;
+}
+
+.chip-name {
+  color: var(--ag-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+}
+
+.chip-note {
+  color: var(--ag-soft);
+}
+
+.chip-remove {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ag-soft);
+  font-size: 12px;
+  line-height: 14px;
+}
+
+.chip-remove:hover {
+  background: var(--ag-control-hover);
+  color: var(--ag-text);
+}
+
+.msg .attachments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
 textarea,
 .input {
   width: 100%;

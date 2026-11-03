@@ -15,6 +15,28 @@ no proxy.
 - **Multiple conversations**, saved automatically. Each conversation is isolated: the agent only
   ever receives the messages of the one you are in, and can never read another one.
 - **Export / import a conversation as a single JSON file** through Photon's file picker.
+- **Image attachments**: attach a PNG/JPEG/GIF/WebP (up to 1 MB each) and the model can look at
+  it. Anything larger is downscaled with Photon's own encoder until it fits.
+
+## Image attachments
+
+Press **Attach image** next to the composer and pick a file. The pipeline in `plugin/images.js`:
+
+1. Reject anything that is not PNG, JPEG, GIF or WebP (magic bytes, not just the extension).
+2. If the file is **≤ 1 MB and at most 1568 px** on its longest edge, it is sent untouched — a
+   small JPEG stays a JPEG instead of being re-encoded to a bigger PNG.
+3. Otherwise it is decoded and re-encoded through `images.encode(image, { maxEdge })` down the
+   ladder **1568 → 1024 → 768 → 512 → 384 → 256 px**, stopping at the first size that fits 1 MB.
+4. If even 256 px does not fit (practically impossible), the attachment is refused with a message
+   instead of silently sending something huge.
+
+Notes:
+
+- Up to **4 images per message**; each chip shows size, dimensions and whether it was compressed.
+- Attachments are **not saved with the conversation**: only name, size and dimensions are kept.
+  Follow-up turns therefore see the text history, not the picture again.
+- Vision support depends on the model (e.g. `gpt-4o-mini`, `claude-sonnet-4-5`,
+  `gemini-2.5-flash`). Text-only models will ignore or reject the image part.
 
 ## Conversations and storage
 
@@ -129,21 +151,24 @@ plugin/
   agent.js             meta tools + loop (pure, testable)
   providers.js         request/response adapters (OpenAI-compatible, Anthropic, Gemini)
   markdown.js          minimal safe Markdown renderer for replies
+  images.js            1 MB attachment pipeline (validate, downscale ladder, base64)
   store.js             conversation model, caps, export/import, migration
   select.js            custom dropdown matching Photon's list design
 tools/
-  agent-test.cjs       headless tests: loop, safety rails, all three adapters
+  agent-test.cjs       headless tests: loop, safety rails, adapters, image payloads
   markdown-test.cjs    headless tests: formatting and HTML escaping
   store-test.cjs       headless tests: conversations, caps, isolation, migration
+  images-test.cjs      headless tests: mime detection and the 1 MB compression ladder
 ```
 
-`agent.js`, `providers.js`, `markdown.js` and `store.js` take no host dependency, so everything is
-testable in Node with no Photon and no API key:
+`agent.js`, `providers.js`, `markdown.js`, `images.js` and `store.js` take no host dependency, so
+everything is testable in Node with no Photon and no API key:
 
 ```powershell
-node tools/agent-test.cjs       # 19 tests — loop, allowlist, confirm, adapters, history repair
+node tools/agent-test.cjs       # 24 tests — loop, allowlist, confirm, adapters, images, history
 node tools/markdown-test.cjs    # 10 tests — formatting, escaping, link safety
 node tools/store-test.cjs       # 17 tests — conversations, caps, isolation, import/export
+node tools/images-test.cjs      # 10 tests — mime detection, 1 MB ladder, refusals
 ```
 
 ## Limitations
@@ -157,6 +182,20 @@ node tools/store-test.cjs       # 17 tests — conversations, caps, isolation, i
   model to ignore instructions found there, but a confirmation dialog is still the real guard.
 
 ## Changelog
+
+### 0.3.0
+
+- **Image attachments**: **Attach image** in the composer picks a PNG/JPEG/GIF/WebP through
+  Photon's file picker. Files up to 1 MB and 1568 px are sent untouched; bigger ones are
+  downscaled through `images.encode` along the ladder 1568 → 1024 → 768 → 512 → 384 → 256 px
+  until they fit 1 MB, and refused with a clear message if they never do.
+- Up to 4 attachments per message, each shown as a chip with thumbnail, size and dimensions.
+- Image parts are built per provider: OpenAI `image_url`, Anthropic base64 `image` blocks,
+  Gemini `inline_data`.
+- Attachment **bytes are never stored** in a conversation — only name/size/dimensions, and
+  `sanitizeHistory()` strips payloads, so history stays small and prune-safe.
+- New `plugin/images.js` + `tools/images-test.cjs` (10 tests); provider image payloads covered
+  in `tools/agent-test.cjs` (now 24 tests).
 
 ### 0.2.0
 

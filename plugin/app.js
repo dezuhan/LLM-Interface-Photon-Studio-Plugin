@@ -11,6 +11,7 @@ const Providers = globalThis.PhotonProviders;
 const Agent = globalThis.PhotonAgent;
 const Store = globalThis.PhotonStore;
 const Markdown = globalThis.PhotonMarkdown;
+const Images = globalThis.PhotonImages;
 
 const DEFAULTS = {
   provider: "openai",
@@ -51,6 +52,8 @@ const el = {
   emptyHint: document.getElementById("emptyHint"),
   prompt: document.getElementById("prompt"),
   send: document.getElementById("send"),
+  attach: document.getElementById("attach"),
+  attachChips: document.getElementById("attachChips"),
   stop: document.getElementById("stop"),
   provider: document.getElementById("provider"),
   providerHint: document.getElementById("providerHint"),
@@ -90,6 +93,7 @@ let store = null;
 let running = false;
 let stopRequested = false;
 let confirmResolve = null;
+let pendingImages = [];
 
 /* ---------- small helpers ---------- */
 
@@ -138,7 +142,7 @@ function scrollToEnd() {
 
 /* ---------- chat rendering ---------- */
 
-function addMessage(kind, text) {
+function addMessage(kind, text, images) {
   if (el.emptyHint && el.emptyHint.parentNode) el.emptyHint.remove();
   const wrap = document.createElement("div");
   wrap.className = "msg " + kind;
@@ -155,9 +159,45 @@ function addMessage(kind, text) {
     bubble.textContent = text;
   }
   wrap.append(who, bubble);
+  const attachments = renderAttachments(images);
+  if (attachments) wrap.append(attachments);
   el.messages.append(wrap);
   scrollToEnd();
   return wrap;
+}
+
+/** Attachment chips shown inside a stored user message (thumbnail only while it is in memory). */
+function renderAttachments(images) {
+  const list = Array.isArray(images) ? images : [];
+  if (!list.length) return null;
+  const row = document.createElement("div");
+  row.className = "attachments";
+  for (const image of list) {
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    if (image.base64) {
+      const thumb = document.createElement("img");
+      thumb.className = "chip-thumb";
+      thumb.alt = "";
+      thumb.src = "data:" + (image.mime || "image/png") + ";base64," + image.base64;
+      chip.append(thumb);
+    }
+    const text = document.createElement("span");
+    text.className = "chip-text";
+    const name = document.createElement("span");
+    name.className = "chip-name";
+    name.textContent = image.name || "image";
+    const note = document.createElement("span");
+    note.className = "chip-note";
+    note.textContent =
+      Images.formatBytes(image.bytes) +
+      (image.width ? " · " + image.width + "×" + image.height : "") +
+      (image.compressed ? " · compressed" : "");
+    text.append(name, note);
+    chip.append(text);
+    row.append(chip);
+  }
+  return row;
 }
 
 function addToolCard(name, args) {
@@ -298,7 +338,7 @@ function renderConversations() {
 
 function renderMessage(message) {
   if (message.role === "user") {
-    addMessage("user", message.text);
+    addMessage("user", message.text, message.images);
     return;
   }
   if (message.role === "assistant") {
@@ -538,12 +578,21 @@ async function send() {
 
   el.prompt.value = "";
   if (el.emptyHint && el.emptyHint.parentNode) el.emptyHint.remove();
-  addMessage("user", text);
+  const attached = pendingImages.slice();
+  pendingImages = [];
+  renderPendingChips();
+  addMessage("user", text, attached.map((image) => ({ ...image })));
 
   // The agent only ever sees the conversation in use.
   const conversation = store.current() || (await store.createConversation());
   const messages = Agent.sanitizeHistory(conversation.messages);
-  messages.push({ role: "user", text });
+  messages.push({
+    role: "user",
+    text,
+    ...(attached.length
+      ? { images: attached.map((image) => ({ mime: image.mime, name: image.name, data: image.base64 })) }
+      : {}),
+  });
 
   running = true;
   stopRequested = false;
@@ -603,12 +652,79 @@ async function send() {
   }
 }
 
+/* ---------- image attachments ---------- */
+
+function renderPendingChips() {
+  el.attachChips.textContent = "";
+  el.attachChips.hidden = pendingImages.length === 0;
+  pendingImages.forEach((image, index) => {
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    const thumb = document.createElement("img");
+    thumb.className = "chip-thumb";
+    thumb.alt = "";
+    thumb.src = "data:" + image.mime + ";base64," + image.base64;
+    const text = document.createElement("span");
+    text.className = "chip-text";
+    const name = document.createElement("span");
+    name.className = "chip-name";
+    name.textContent = image.name;
+    const note = document.createElement("span");
+    note.className = "chip-note";
+    note.textContent =
+      Images.formatBytes(image.bytes) +
+      " · " +
+      image.width +
+      "×" +
+      image.height +
+      (image.compressed ? " · compressed" : "");
+    text.append(name, note);
+    const remove = document.createElement("button");
+    remove.className = "chip-remove";
+    remove.type = "button";
+    remove.textContent = "×";
+    remove.title = "Remove attachment";
+    remove.addEventListener("click", () => {
+      pendingImages.splice(index, 1);
+      renderPendingChips();
+    });
+    chip.append(thumb, text, remove);
+    el.attachChips.append(chip);
+  });
+}
+
+async function attachImage() {
+  if (pendingImages.length >= Images.MAX_ATTACHMENTS) {
+    setStatus("At most " + Images.MAX_ATTACHMENTS + " images per message.");
+    return;
+  }
+  try {
+    const source = await api.files.pick();
+    if (!source) return;
+    setStatus("preparing image…");
+    const bytes = await api.files.read(source);
+    const name = String(source).split(/[\\/]/).pop() || "image";
+    // 1 MB ceiling: Images.prepare downscales through Photon's encoder until it fits.
+    const prepared = await Images.prepare({ api, bytes, name });
+    pendingImages.push(prepared);
+    renderPendingChips();
+    setStatus(
+      "Attached " +
+        Images.formatBytes(prepared.bytes) +
+        (prepared.compressed ? " (compressed from " + Images.formatBytes(prepared.originalBytes) + ")" : ""),
+    );
+  } catch (error) {
+    setStatus("attach failed: " + errText(error));
+  }
+}
+
 /* ---------- wiring ---------- */
 
 function wire() {
   el.tabChat.addEventListener("click", () => showView("chat"));
   el.tabSettings.addEventListener("click", () => showView("settings"));
   el.send.addEventListener("click", () => void send());
+  el.attach.addEventListener("click", () => void attachImage());
   el.stop.addEventListener("click", () => {
     stopRequested = true;
     badge("Stopping…", "busy");
@@ -708,7 +824,7 @@ async function init() {
 if (!SDK) {
   badge("Failed", "danger");
   setStatus("Photon Plugin SDK is unavailable — open this panel inside Photon Studio.");
-} else if (!Providers || !Agent || !Store || !Markdown) {
+} else if (!Providers || !Agent || !Store || !Markdown || !Images) {
   badge("Failed", "danger");
   setStatus("Plugin scripts failed to load.");
 } else {

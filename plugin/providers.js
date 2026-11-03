@@ -83,7 +83,15 @@
       const out = [];
       for (const message of messages) {
         if (message.role === "user") {
-          out.push({ role: "user", content: [{ type: "text", text: message.text || "" }] });
+          const content = [{ type: "text", text: message.text || "" }];
+          for (const image of message.images || []) {
+            if (!image || !image.data) continue;
+            content.push({
+              type: "image",
+              source: { type: "base64", media_type: image.mime || "image/png", data: image.data },
+            });
+          }
+          out.push({ role: "user", content });
         } else if (message.role === "assistant") {
           const content = [];
           if (message.text) content.push({ type: "text", text: message.text });
@@ -112,7 +120,12 @@
       const contents = [];
       for (const message of messages) {
         if (message.role === "user") {
-          contents.push({ role: "user", parts: [{ text: message.text || "" }] });
+          const parts = [{ text: message.text || "" }];
+          for (const image of message.images || []) {
+            if (!image || !image.data) continue;
+            parts.push({ inline_data: { mime_type: image.mime || "image/png", data: image.data } });
+          }
+          contents.push({ role: "user", parts });
         } else if (message.role === "assistant") {
           const parts = [];
           if (message.text) parts.push({ text: message.text });
@@ -134,7 +147,21 @@
     if (system) out.push({ role: "system", content: system });
     for (const message of messages) {
       if (message.role === "user") {
-        out.push({ role: "user", content: message.text || "" });
+        const images = (message.images || []).filter((image) => image && image.data);
+        if (images.length) {
+          out.push({
+            role: "user",
+            content: [
+              { type: "text", text: message.text || "" },
+              ...images.map((image) => ({
+                type: "image_url",
+                image_url: { url: "data:" + (image.mime || "image/png") + ";base64," + image.data },
+              })),
+            ],
+          });
+        } else {
+          out.push({ role: "user", content: message.text || "" });
+        }
       } else if (message.role === "assistant") {
         const entry = { role: "assistant", content: message.text || "" };
         if (message.toolCalls && message.toolCalls.length) {

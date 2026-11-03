@@ -382,6 +382,67 @@ test("sanitizeHistory keeps complete call/result pairs", () => {
   assert.equal(clean[2].toolCallId, "x");
 });
 
+test("sanitizeHistory keeps attachment metadata but drops base64", () => {
+  const clean = agent.sanitizeHistory([
+    {
+      role: "user",
+      text: "look at this",
+      images: [{ mime: "image/png", name: "shot.png", data: "AAAABBBB", bytes: 2048, width: 800, height: 600, compressed: true, edge: 768 }],
+    },
+  ]);
+  const message = clean[0];
+  assert.equal(message.images.length, 1);
+  assert.equal(message.images[0].name, "shot.png");
+  assert.equal(message.images[0].width, 800);
+  assert.equal(message.images[0].data, undefined, "base64 is never stored");
+});
+
+test("openai request embeds images as image_url parts", () => {
+  const built = providers.buildRequest({
+    provider: "openai",
+    model: "gpt-4o-mini",
+    messages: [
+      { role: "user", text: "what is wrong here?", images: [{ mime: "image/png", data: "QUJD" }] },
+    ],
+  });
+  const content = built.options.json.messages[0].content;
+  assert.ok(Array.isArray(content));
+  assert.equal(content[0].type, "text");
+  assert.equal(content[1].type, "image_url");
+  assert.equal(content[1].image_url.url, "data:image/png;base64,QUJD");
+});
+
+test("openai text-only messages keep the plain string shape", () => {
+  const built = providers.buildRequest({
+    provider: "openai",
+    model: "gpt-4o-mini",
+    messages: [{ role: "user", text: "hi" }],
+  });
+  assert.equal(built.options.json.messages[0].content, "hi");
+});
+
+test("anthropic request embeds base64 image blocks", () => {
+  const built = providers.buildRequest({
+    provider: "anthropic",
+    model: "claude-sonnet-4-5",
+    messages: [{ role: "user", text: "compare", images: [{ mime: "image/jpeg", data: "QUJD" }] }],
+  });
+  const content = built.options.json.messages[0].content;
+  assert.equal(content[1].type, "image");
+  assert.deepEqual(content[1].source, { type: "base64", media_type: "image/jpeg", data: "QUJD" });
+});
+
+test("gemini request embeds inline_data parts", () => {
+  const built = providers.buildRequest({
+    provider: "gemini",
+    model: "gemini-2.5-flash",
+    messages: [{ role: "user", text: "describe", images: [{ mime: "image/png", data: "QUJD" }] }],
+  });
+  const parts = built.options.json.contents[0].parts;
+  assert.equal(parts[0].text, "describe");
+  assert.deepEqual(parts[1].inline_data, { mime_type: "image/png", data: "QUJD" });
+});
+
 /* ------------------------------------------------------------------ report */
 
 (async () => {

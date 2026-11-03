@@ -34,8 +34,10 @@
         </div>
 
         <div class="composer">
+          <div id="attachChips" class="chips" hidden></div>
           <textarea id="prompt" rows="3" placeholder="e.g. rename the selected layer to Hero and set its opacity to 80%"></textarea>
           <div class="actions">
+            <button id="attach" class="button small cancel" type="button">Attach image</button>
             <button id="send" class="button" type="button">Send</button>
             <button id="stop" class="button cancel" type="button" hidden>Stop</button>
           </div>
@@ -150,6 +152,7 @@
     <script src="select.js"></script>
     <script src="providers.js"></script>
     <script src="markdown.js"></script>
+    <script src="images.js"></script>
     <script src="store.js"></script>
     <script src="agent.js"></script>
     <script src="app.js"></script>

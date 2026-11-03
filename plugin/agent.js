@@ -299,10 +299,25 @@
     return { run, dispatch, catalog, executed: () => executed };
   }
 
+  /** Keep attachment metadata, never the base64 payload. */
+  function cleanImages(list) {
+    return (Array.isArray(list) ? list : [])
+      .filter((image) => image && image.mime)
+      .map((image) => ({
+        mime: String(image.mime),
+        name: String(image.name || "image"),
+        bytes: Number(image.bytes) || 0,
+        width: Number(image.width) || 0,
+        height: Number(image.height) || 0,
+        compressed: Boolean(image.compressed),
+        edge: Number(image.edge) || 0,
+      }));
+  }
+
   /**
    * Make a stored conversation safe to send back to a provider: drop tool results whose call
    * is missing (history pruning can cut a pair) and strip tool calls that never got a result.
-   * Providers reject both shapes.
+   * Providers reject both shapes. Attachment bytes are removed here as well.
    */
   function sanitizeHistory(messages) {
     const result = [];
@@ -310,7 +325,12 @@
     for (const message of messages || []) {
       if (!message) continue;
       if (message.role === "user") {
-        result.push({ role: "user", text: message.text || "" });
+        const images = cleanImages(message.images);
+        result.push({
+          role: "user",
+          text: message.text || "",
+          ...(images.length ? { images } : {}),
+        });
         continue;
       }
       if (message.role === "assistant") {
