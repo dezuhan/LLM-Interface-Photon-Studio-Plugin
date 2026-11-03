@@ -3,7 +3,7 @@
   "sdkVersion": 1,
   "id": "photon-llm-interface",
   "name": "AI Agent",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "index.html",
   "panels": [
     {

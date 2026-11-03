@@ -137,7 +137,13 @@ function addMessage(kind, text) {
   who.textContent = kind === "user" ? "you" : kind === "error" ? "error" : "agent";
   const bubble = document.createElement("div");
   bubble.className = "bubble";
-  bubble.textContent = text;
+  // Replies may contain Markdown; renderer escapes first, so this cannot inject markup.
+  if (kind === "assistant" && globalThis.PhotonMarkdown) {
+    bubble.classList.add("markdown");
+    bubble.innerHTML = globalThis.PhotonMarkdown.render(text);
+  } else {
+    bubble.textContent = text;
+  }
   wrap.append(who, bubble);
   el.messages.append(wrap);
   scrollToEnd();

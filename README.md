@@ -10,6 +10,8 @@ no proxy.
 - **Keys stay in Photon's credential vault** — never in settings, logs or the repo.
 - **Nothing happens silently**: every operation is described before it runs and applied as one
   undoable transaction.
+- **Readable replies**: agent answers render simple Markdown (bold, italics, inline code, fenced
+  code, lists, quotes, rules, http links) with all model output HTML-escaped first.
 
 ## Status — 0.1.0 (MVP)
 
@@ -90,16 +92,19 @@ plugin/
   app.js               UI wiring, settings, credentials, turn orchestration
   agent.js             meta tools + loop (pure, testable)
   providers.js         request/response adapters (OpenAI-compatible, Anthropic, Gemini)
+  markdown.js          minimal safe Markdown renderer for replies
   select.js            custom dropdown matching Photon's list design
 tools/
   agent-test.cjs       headless tests: loop, safety rails, all three adapters
+  markdown-test.cjs    headless tests: formatting and HTML escaping
 ```
 
-`agent.js` and `providers.js` take the Photon SDK as an injected object, so the whole loop is
-testable in Node with no Photon and no API key:
+`agent.js`, `providers.js` and `markdown.js` take no host dependency, so everything is testable in
+Node with no Photon and no API key:
 
 ```powershell
-node tools/agent-test.cjs     # 16 tests, no network
+node tools/agent-test.cjs       # 16 tests — loop, allowlist, confirm, adapters
+node tools/markdown-test.cjs    # 10 tests — formatting, escaping, link safety
 ```
 
 ## Limitations
@@ -111,6 +116,22 @@ node tools/agent-test.cjs     # 16 tests, no network
   still save it yourself.
 - Layer names and text inside the document are treated as **data**; the system prompt tells the
   model to ignore instructions found there, but a confirmation dialog is still the real guard.
+
+## Changelog
+
+### 0.1.1
+
+- Agent replies now render **simple Markdown** instead of raw text: `**bold**`, `*italic*`,
+  `` `inline code` ``, fenced code blocks, ordered/unordered lists, blockquotes, rules and
+  `http(s)` links. Everything is HTML-escaped before formatting, so model output (or text picked
+  up from layer names) can never inject markup; `javascript:` links stay plain text.
+- New `plugin/markdown.js` and `tools/markdown-test.cjs` (10 tests).
+
+### 0.1.0
+
+- First working version: BYOK settings for OpenAI-compatible / Anthropic / Gemini providers,
+  Photon credential vault, connection test, chat with the four meta tools, per-operation
+  confirmation, safe allowlist, one undo step per operation, stop button.
 
 ## Roadmap
 

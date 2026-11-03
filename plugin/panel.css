@@ -239,6 +239,98 @@ select:focus-visible {
   background: var(--ag-raise), var(--ag-control-active);
 }
 
+/* ---------- markdown inside agent bubbles ---------- */
+
+.bubble.markdown > :first-child {
+  margin-top: 0;
+}
+
+.bubble.markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.bubble.markdown p {
+  margin: 0 0 6px;
+}
+
+.bubble.markdown strong {
+  font-weight: 600;
+  color: var(--ag-text);
+}
+
+.bubble.markdown em {
+  font-style: italic;
+}
+
+.bubble.markdown code {
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--ag-control-active);
+  font-family: var(--ag-font);
+  font-size: 11px;
+}
+
+.bubble.markdown .md-pre {
+  margin: 6px 0;
+  padding: 7px 8px;
+  border-radius: var(--ag-radius-control);
+  background: var(--ph-black-3, rgba(0, 0, 0, 0.3));
+  box-shadow: var(--ag-hairline);
+  overflow: auto;
+  max-height: 220px;
+  font-size: 10px;
+  line-height: 15px;
+  white-space: pre;
+}
+
+.bubble.markdown .md-pre code {
+  padding: 0;
+  background: none;
+  font-size: 10px;
+}
+
+.bubble.markdown ul,
+.bubble.markdown ol {
+  margin: 0 0 6px;
+  padding-left: 18px;
+}
+
+.bubble.markdown li {
+  margin: 1px 0;
+}
+
+.bubble.markdown li::marker {
+  color: var(--ag-soft);
+}
+
+.bubble.markdown blockquote {
+  margin: 6px 0;
+  padding-left: 8px;
+  border-left: 2px solid var(--ag-line-strong);
+  color: var(--ag-muted);
+}
+
+.bubble.markdown hr {
+  margin: 8px 0;
+  border: 0;
+  border-top: 1px solid var(--ag-line);
+}
+
+.bubble.markdown .md-h {
+  font-weight: 600;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--ag-muted);
+  margin: 8px 0 4px;
+}
+
+.bubble.markdown .md-link {
+  color: var(--ag-accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .msg.error .bubble {
   color: var(--ag-danger);
   box-shadow: inset 0 0 0 1px var(--ag-danger);
