@@ -299,11 +299,60 @@
     return { run, dispatch, catalog, executed: () => executed };
   }
 
+  /**
+   * Make a stored conversation safe to send back to a provider: drop tool results whose call
+   * is missing (history pruning can cut a pair) and strip tool calls that never got a result.
+   * Providers reject both shapes.
+   */
+  function sanitizeHistory(messages) {
+    const result = [];
+    const pending = new Map();
+    for (const message of messages || []) {
+      if (!message) continue;
+      if (message.role === "user") {
+        result.push({ role: "user", text: message.text || "" });
+        continue;
+      }
+      if (message.role === "assistant") {
+        const copy = {
+          role: "assistant",
+          text: message.text || "",
+          toolCalls: (message.toolCalls || [])
+            .filter((call) => call && call.id)
+            .map((call) => ({ id: call.id, name: call.name, args: call.args || {} })),
+        };
+        for (const call of copy.toolCalls) pending.set(call.id, { call, message: copy, resolved: false });
+        result.push(copy);
+        continue;
+      }
+      if (message.role === "tool") {
+        const entry = pending.get(message.toolCallId);
+        if (!entry) continue;
+        entry.resolved = true;
+        result.push({
+          role: "tool",
+          toolCallId: message.toolCallId,
+          name: message.name || entry.call.name,
+          text: message.text || "",
+        });
+      }
+    }
+    for (const entry of pending.values()) {
+      if (entry.resolved) continue;
+      entry.message.toolCalls = entry.message.toolCalls.filter((call) => call.id !== entry.call.id);
+    }
+    return result.filter(
+      (message) =>
+        message.role !== "assistant" || message.text || (message.toolCalls && message.toolCalls.length),
+    );
+  }
+
   return {
     META_TOOLS,
     SAFE_DENY,
     createCatalog,
     createRunner,
     documentContext,
+    sanitizeHistory,
   };
 });

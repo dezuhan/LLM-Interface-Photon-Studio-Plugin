@@ -9,6 +9,8 @@
 const SDK = globalThis.__photonSdk;
 const Providers = globalThis.PhotonProviders;
 const Agent = globalThis.PhotonAgent;
+const Store = globalThis.PhotonStore;
+const Markdown = globalThis.PhotonMarkdown;
 
 const DEFAULTS = {
   provider: "openai",
@@ -66,7 +68,15 @@ const el = {
   test: document.getElementById("test"),
   testResult: document.getElementById("testResult"),
   status: document.getElementById("status"),
-  clear: document.getElementById("clear"),
+  convMeta: document.getElementById("convMeta"),
+  conv: document.getElementById("conv"),
+  newChat: document.getElementById("newChat"),
+  clearChat: document.getElementById("clearChat"),
+  exportChat: document.getElementById("exportChat"),
+  importChat: document.getElementById("importChat"),
+  deleteAll: document.getElementById("deleteAll"),
+  convStats: document.getElementById("convStats"),
+  confirmTitle: document.getElementById("confirmTitle"),
   confirmOverlay: document.getElementById("confirmOverlay"),
   confirmDesc: document.getElementById("confirmDesc"),
   confirmArgs: document.getElementById("confirmArgs"),
@@ -76,7 +86,7 @@ const el = {
 
 let api = null;
 let settings = { ...DEFAULTS };
-let history = [];
+let store = null;
 let running = false;
 let stopRequested = false;
 let confirmResolve = null;
@@ -138,9 +148,9 @@ function addMessage(kind, text) {
   const bubble = document.createElement("div");
   bubble.className = "bubble";
   // Replies may contain Markdown; renderer escapes first, so this cannot inject markup.
-  if (kind === "assistant" && globalThis.PhotonMarkdown) {
+  if (kind === "assistant" && Markdown) {
     bubble.classList.add("markdown");
-    bubble.innerHTML = globalThis.PhotonMarkdown.render(text);
+    bubble.innerHTML = Markdown.render(text);
   } else {
     bubble.textContent = text;
   }
@@ -206,10 +216,35 @@ function applySettingsToUi() {
   el.model.placeholder = info.modelPlaceholder;
 }
 
+/* ---------- plugin settings document (config + chat history share one JSON) ---------- */
+
+async function readPluginSettings() {
+  try {
+    const value = await api.settings.get();
+    return value && typeof value === "object" ? value : {};
+  } catch {
+    return {};
+  }
+}
+
+async function patchSettings(patch) {
+  const current = await readPluginSettings();
+  await api.settings.set({ ...current, ...patch });
+}
+
 async function saveSettings() {
   settings = readSettings();
   try {
-    await api.settings.set(settings);
+    await patchSettings({
+      provider: settings.provider,
+      baseUrl: settings.baseUrl,
+      model: settings.model,
+      keyless: settings.keyless,
+      temperature: settings.temperature,
+      maxSteps: settings.maxSteps,
+      confirm: settings.confirm,
+      allowlist: settings.allowlist,
+    });
     setStatus("settings saved");
   } catch (error) {
     setStatus("could not save settings");
@@ -217,6 +252,147 @@ async function saveSettings() {
   if (window.syncCustomSelects) window.syncCustomSelects();
   await refreshKeyState();
 }
+
+/* ---------- conversations ---------- */
+
+function conversationLabel(conversation) {
+  const stamp = new Date(conversation.updatedAt);
+  const today = new Date();
+  const sameDay =
+    stamp.getFullYear() === today.getFullYear() &&
+    stamp.getMonth() === today.getMonth() &&
+    stamp.getDate() === today.getDate();
+  const when = sameDay
+    ? stamp.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" })
+    : stamp.toLocaleDateString("en-GB", { day: "2-digit", month: "short" });
+  return conversation.title + " · " + when;
+}
+
+function renderConversations() {
+  const list = store.conversations();
+  const current = store.current();
+  el.conv.textContent = "";
+  for (const conversation of list) {
+    const option = document.createElement("option");
+    option.value = conversation.id;
+    option.textContent = conversationLabel(conversation);
+    if (current && conversation.id === current.id) option.selected = true;
+    el.conv.append(option);
+  }
+  if (current) {
+    el.conv.value = current.id;
+    el.convMeta.textContent = current.messages.length + " message(s)";
+  }
+  const stats = store.stats();
+  el.convStats.textContent =
+    stats.conversations +
+    " conversation(s) · " +
+    stats.messages +
+    " message(s) · " +
+    Math.round(stats.chars / 1024) +
+    " KB of " +
+    Math.round(stats.limit / 1024) +
+    " KB";
+  if (window.syncCustomSelects) window.syncCustomSelects();
+}
+
+function renderMessage(message) {
+  if (message.role === "user") {
+    addMessage("user", message.text);
+    return;
+  }
+  if (message.role === "assistant") {
+    if (message.text) addMessage("assistant", message.text);
+    return;
+  }
+  if (message.role === "tool") {
+    const card = addToolCard(message.name || "tool result", {});
+    updateToolCard(card, "ok", message.text);
+  }
+}
+
+function renderConversation() {
+  el.messages.textContent = "";
+  const conversation = store.current();
+  const messages = conversation ? conversation.messages : [];
+  if (!messages.length) {
+    const hint = document.createElement("p");
+    hint.className = "empty";
+    hint.id = "emptyHint";
+    hint.textContent =
+      "Ask for an edit in plain language. The agent reads the document, finds the right " +
+      "Photon operation, shows you what it will run, then applies it as one undoable step.";
+    el.messages.append(hint);
+    el.emptyHint = hint;
+  } else {
+    el.emptyHint = null;
+    for (const message of messages) renderMessage(message);
+  }
+  renderConversations();
+}
+
+async function newConversation() {
+  await store.createConversation();
+  renderConversation();
+  showView("chat");
+  el.prompt.focus();
+  setStatus("new conversation");
+}
+
+async function switchConversation(id) {
+  await store.select(id);
+  renderConversation();
+  setStatus("conversation loaded");
+}
+
+async function clearCurrentConversation() {
+  await store.clearCurrent();
+  renderConversation();
+  badge("Idle", "ok");
+  setStatus("conversation cleared");
+}
+
+async function deleteAllConversations() {
+  const confirmed = await askDialog(
+    "Delete all conversations",
+    "This removes every saved conversation from this plugin. It cannot be undone.",
+  );
+  if (!confirmed) return;
+  await store.deleteAll();
+  renderConversation();
+  badge("Idle", "ok");
+  setStatus("all conversations deleted");
+}
+
+async function exportConversation() {
+  try {
+    const payload = store.exportCurrent();
+    if (!payload) return;
+    const name = (payload.conversation.title || "conversation").replace(/[^a-z0-9-_ ]/gi, "").trim() || "conversation";
+    const target = await api.files.pick({ save: true, name: name + ".json" });
+    if (!target) return;
+    await api.files.write(target, new TextEncoder().encode(JSON.stringify(payload, null, 1)));
+    setStatus("conversation exported");
+  } catch (error) {
+    setStatus("export failed: " + errText(error));
+  }
+}
+
+async function importConversation() {
+  try {
+    const source = await api.files.pick();
+    if (!source) return;
+    const bytes = await api.files.read(source);
+    const payload = JSON.parse(new TextDecoder().decode(bytes));
+    await store.importConversation(payload);
+    renderConversation();
+    showView("chat");
+    setStatus("conversation imported");
+  } catch (error) {
+    setStatus("import failed: " + errText(error));
+  }
+}
+
 
 function providerOrigin() {
   const info = Providers.providerInfo(settings.provider);
@@ -321,10 +497,24 @@ async function callModel(messages, tools, system) {
 /* ---------- confirmation ---------- */
 
 function askConfirm(request) {
+  el.confirmTitle.textContent = "Confirm operation";
   el.confirmDesc.textContent = request.description
     ? request.operation + " — " + request.description
     : request.operation;
+  el.confirmArgs.hidden = false;
   el.confirmArgs.textContent = JSON.stringify(request.arguments || {}, null, 1);
+  el.confirmOverlay.hidden = false;
+  return new Promise((resolve) => {
+    confirmResolve = resolve;
+  });
+}
+
+/** Plain yes/no dialog (delete-all and similar). Resolves true only on Apply. */
+function askDialog(title, body) {
+  el.confirmTitle.textContent = title;
+  el.confirmDesc.textContent = body;
+  el.confirmArgs.hidden = true;
+  el.confirmArgs.textContent = "";
   el.confirmOverlay.hidden = false;
   return new Promise((resolve) => {
     confirmResolve = resolve;
@@ -333,6 +523,7 @@ function askConfirm(request) {
 
 function settleConfirm(value) {
   el.confirmOverlay.hidden = true;
+  el.confirmArgs.hidden = false;
   const resolve = confirmResolve;
   confirmResolve = null;
   if (resolve) resolve(value);
@@ -346,8 +537,13 @@ async function send() {
   if (!text) return;
 
   el.prompt.value = "";
+  if (el.emptyHint && el.emptyHint.parentNode) el.emptyHint.remove();
   addMessage("user", text);
-  history.push({ role: "user", text });
+
+  // The agent only ever sees the conversation in use.
+  const conversation = store.current() || (await store.createConversation());
+  const messages = Agent.sanitizeHistory(conversation.messages);
+  messages.push({ role: "user", text });
 
   running = true;
   stopRequested = false;
@@ -382,8 +578,10 @@ async function send() {
   });
 
   try {
-    const result = await runner.run(history, SYSTEM_PROMPT);
+    const result = await runner.run(messages, SYSTEM_PROMPT);
     if (result.text) addMessage("assistant", result.text);
+    await store.replaceMessages(Agent.sanitizeHistory(messages));
+    renderConversations();
     badge("Done", "ok");
     setStatus(result.executed + " operation(s) applied");
   } catch (error) {
@@ -453,18 +651,12 @@ function wire() {
     if (!el.confirmOverlay.hidden) settleConfirm(false);
   });
 
-  el.clear.addEventListener("click", () => {
-    history = [];
-    el.messages.textContent = "";
-    const hint = document.createElement("p");
-    hint.className = "empty";
-    hint.id = "emptyHint";
-    hint.textContent = "Chat cleared. Ask for the next edit.";
-    el.messages.append(hint);
-    el.emptyHint = hint;
-    badge("Idle", "ok");
-    setStatus("not connected");
-  });
+  el.clearChat.addEventListener("click", () => void clearCurrentConversation());
+  el.deleteAll.addEventListener("click", () => void deleteAllConversations());
+  el.exportChat.addEventListener("click", () => void exportConversation());
+  el.importChat.addEventListener("click", () => void importConversation());
+  el.newChat.addEventListener("click", () => void newConversation());
+  el.conv.addEventListener("change", () => void switchConversation(el.conv.value));
 }
 
 async function testConnection() {
@@ -496,6 +688,19 @@ async function init() {
   if (!settings.model) settings.model = Providers.providerInfo(settings.provider).modelPlaceholder;
   applySettingsToUi();
   await refreshKeyState();
+
+  store = Store.createStore({
+    load: async () => {
+      const current = await readPluginSettings();
+      return current && current.chat ? current.chat : null;
+    },
+    save: async (chat) => {
+      await patchSettings({ chat });
+    },
+  });
+  await store.hydrate();
+  renderConversation();
+
   badge("Idle", "ok");
   setStatus("ready");
 }
@@ -503,7 +708,7 @@ async function init() {
 if (!SDK) {
   badge("Failed", "danger");
   setStatus("Photon Plugin SDK is unavailable — open this panel inside Photon Studio.");
-} else if (!Providers || !Agent) {
+} else if (!Providers || !Agent || !Store || !Markdown) {
   badge("Failed", "danger");
   setStatus("Plugin scripts failed to load.");
 } else {

@@ -12,6 +12,42 @@ no proxy.
   undoable transaction.
 - **Readable replies**: agent answers render simple Markdown (bold, italics, inline code, fenced
   code, lists, quotes, rules, http links) with all model output HTML-escaped first.
+- **Multiple conversations**, saved automatically. Each conversation is isolated: the agent only
+  ever receives the messages of the one you are in, and can never read another one.
+- **Export / import a conversation as a single JSON file** through Photon's file picker.
+
+## Conversations and storage
+
+Why not SQLite: a custom panel runs in a sandboxed webview — no Node, no native modules, no
+`require`, and no arbitrary file system. A native SQLite file is therefore not reachable, and a
+SQLite-WASM build would need a large asset plus network/CSP exceptions to load it.
+
+| Option | Reality for a plugin | Verdict |
+| --- | --- | --- |
+| SQLite file via a sidecar service | Needs a second process, a port, an installer and its own lifecycle | Possible, but far too heavy for chat text |
+| Private files in the plugin data folder | The stock SDK has no private-file API; `files.*` only reaches picker grants | Not available |
+| `settings.get/set` JSON | The one automatic private store, atomic writes, **1 MB cap** | **Used here** |
+| `localStorage` / IndexedDB | No contract, may be wiped when the panel reloads | Avoided |
+
+So conversations live in one compact JSON document inside the plugin's settings, under the
+`chat` key, with hard caps enforced by `plugin/store.js`:
+
+| Limit | Value | Behaviour |
+| --- | --- | --- |
+| Conversations | 20 | Oldest (except the active one) are dropped |
+| Messages per conversation | 60 | Oldest messages are dropped |
+| Total size | ~700 KB of the 1 MB settings budget | Oldest conversations shrink first |
+
+Conversation isolation is structural, not a promise: the runner is handed
+`store.current().messages` and nothing else. No tool in `agent.js` can reach the store, so there
+is no path from one conversation to another. When history is pruned, `sanitizeHistory()` drops
+half-finished tool-call pairs so the provider still accepts the history.
+
+"For one conversation per file" is supported through **Export…** / **Import…** in Settings: each
+file contains exactly one conversation, and importing it appends it as a new conversation.
+
+Settings also has **Clear this chat** (empties the current conversation) and **Delete all**
+(confirmation dialog, removes every saved conversation).
 
 ## Status — 0.1.0 (MVP)
 
@@ -93,18 +129,21 @@ plugin/
   agent.js             meta tools + loop (pure, testable)
   providers.js         request/response adapters (OpenAI-compatible, Anthropic, Gemini)
   markdown.js          minimal safe Markdown renderer for replies
+  store.js             conversation model, caps, export/import, migration
   select.js            custom dropdown matching Photon's list design
 tools/
   agent-test.cjs       headless tests: loop, safety rails, all three adapters
   markdown-test.cjs    headless tests: formatting and HTML escaping
+  store-test.cjs       headless tests: conversations, caps, isolation, migration
 ```
 
-`agent.js`, `providers.js` and `markdown.js` take no host dependency, so everything is testable in
-Node with no Photon and no API key:
+`agent.js`, `providers.js`, `markdown.js` and `store.js` take no host dependency, so everything is
+testable in Node with no Photon and no API key:
 
 ```powershell
-node tools/agent-test.cjs       # 16 tests — loop, allowlist, confirm, adapters
+node tools/agent-test.cjs       # 19 tests — loop, allowlist, confirm, adapters, history repair
 node tools/markdown-test.cjs    # 10 tests — formatting, escaping, link safety
+node tools/store-test.cjs       # 17 tests — conversations, caps, isolation, import/export
 ```
 
 ## Limitations
@@ -118,6 +157,18 @@ node tools/markdown-test.cjs    # 10 tests — formatting, escaping, link safety
   model to ignore instructions found there, but a confirmation dialog is still the real guard.
 
 ## Changelog
+
+### 0.2.0
+
+- **Conversations**: conversation bar with a picker and a **New** button. Chats are created,
+  renamed (from the first message), switched and saved automatically.
+- **Persistence** in the plugin's settings JSON (`chat` key) with hard caps — 20 conversations,
+  60 messages each, ~700 KB budget — and pruning that always keeps the conversation in use.
+- **Isolation**: the agent only receives the active conversation; no tool can read another one.
+  `sanitizeHistory()` repairs pruned tool-call pairs before each request.
+- **Settings → Clear this chat**, **Delete all** (with confirmation), and **Export… / Import…**
+  to store one conversation per `.json` file through Photon's file picker.
+- New `plugin/store.js` + `tools/store-test.cjs` (17 tests); `tools/agent-test.cjs` grew to 19.
 
 ### 0.1.1
 

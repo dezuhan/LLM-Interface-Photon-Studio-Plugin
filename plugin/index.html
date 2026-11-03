@@ -12,6 +12,14 @@
         <span id="badge" class="badge ok">Idle</span>
       </header>
 
+      <div class="conv-bar">
+        <span class="select">
+          <select id="conv"></select>
+          <span class="chevron" aria-hidden="true"></span>
+        </span>
+        <button id="newChat" class="button small" type="button">New</button>
+      </div>
+
       <div class="tabs" role="tablist">
         <button id="tabChat" class="tab active" type="button" role="tab">Chat</button>
         <button id="tabSettings" class="tab" type="button" role="tab">Settings</button>
@@ -98,6 +106,17 @@
           <span>Ask before each change</span>
         </label>
 
+        <p class="label sep">Conversations</p>
+        <div class="actions">
+          <button id="clearChat" class="button small" type="button">Clear this chat</button>
+          <button id="exportChat" class="button small" type="button">Export…</button>
+        </div>
+        <div class="actions">
+          <button id="importChat" class="button small" type="button">Import…</button>
+          <button id="deleteAll" class="button small cancel" type="button">Delete all</button>
+        </div>
+        <p id="convStats" class="hint"></p>
+
         <div class="actions">
           <button id="save" class="button" type="button">Save</button>
           <button id="test" class="button cancel" type="button">Test connection</button>
@@ -108,14 +127,14 @@
 
       <footer class="panel-footer">
         <span id="status">not connected</span>
-        <button id="clear" class="link-button" type="button">Clear chat</button>
+        <span id="convMeta" class="hint"></span>
       </footer>
     </main>
 
     <div class="overlay" id="confirmOverlay" hidden>
       <div class="overlay-card" role="dialog" aria-label="Confirm operation">
         <header class="overlay-head">
-          <span class="label">Confirm operation</span>
+          <span class="label" id="confirmTitle">Confirm operation</span>
         </header>
         <div class="confirm-body">
           <p id="confirmDesc" class="hint"></p>
@@ -131,6 +150,7 @@
     <script src="select.js"></script>
     <script src="providers.js"></script>
     <script src="markdown.js"></script>
+    <script src="store.js"></script>
     <script src="agent.js"></script>
     <script src="app.js"></script>
   </body>

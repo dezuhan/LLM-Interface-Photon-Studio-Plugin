@@ -3,7 +3,7 @@
   "sdkVersion": 1,
   "id": "photon-llm-interface",
   "name": "AI Agent",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "main": "index.html",
   "panels": [
     {
@@ -28,6 +28,7 @@
     "document": "readWrite",
     "credentials": true,
     "customEndpoints": true,
+    "files": true,
     "network": [
       "https://api.openai.com",
       "https://api.anthropic.com",

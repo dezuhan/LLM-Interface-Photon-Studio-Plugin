@@ -145,6 +145,25 @@ select:focus-visible {
   gap: 4px;
 }
 
+/* ---------- conversation bar ---------- */
+
+.conv-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.conv-bar > .select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.sep {
+  margin-top: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--ag-line);
+}
+
 .tab {
   height: 24px;
   padding: 0 10px;

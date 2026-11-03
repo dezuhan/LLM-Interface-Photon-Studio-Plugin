@@ -340,6 +340,48 @@ test("keyless local endpoint omits the credential", () => {
   assert.equal(built.url, "http://127.0.0.1:11434/v1/chat/completions");
 });
 
+test("sanitizeHistory drops orphan tool results", () => {
+  const clean = agent.sanitizeHistory([
+    { role: "user", text: "hi" },
+    { role: "tool", toolCallId: "gone", name: "t", text: "leftover" },
+    { role: "assistant", text: "hello" },
+  ]);
+  assert.equal(clean.length, 2);
+  assert.equal(clean[1].role, "assistant");
+});
+
+test("sanitizeHistory strips tool calls that never got a result", () => {
+  const clean = agent.sanitizeHistory([
+    { role: "user", text: "hi" },
+    {
+      role: "assistant",
+      text: "checking",
+      toolCalls: [
+        { id: "a", name: "photon_document_context", args: {} },
+        { id: "b", name: "photon_find_operations", args: { query: "x" } },
+      ],
+    },
+    { role: "tool", toolCallId: "a", name: "photon_document_context", text: "{}" },
+  ]);
+  const assistant = clean.find((message) => message.role === "assistant");
+  assert.equal(assistant.toolCalls.length, 1);
+  assert.equal(assistant.toolCalls[0].id, "a");
+  assert.equal(clean.filter((message) => message.role === "tool").length, 1);
+});
+
+test("sanitizeHistory keeps complete call/result pairs", () => {
+  const input = [
+    { role: "user", text: "go" },
+    { role: "assistant", text: "", toolCalls: [{ id: "x", name: "t", args: { a: 1 } }] },
+    { role: "tool", toolCallId: "x", name: "t", text: "ok" },
+    { role: "assistant", text: "done" },
+  ];
+  const clean = agent.sanitizeHistory(input);
+  assert.equal(clean.length, 4);
+  assert.equal(clean[1].toolCalls[0].id, "x");
+  assert.equal(clean[2].toolCallId, "x");
+});
+
 /* ------------------------------------------------------------------ report */
 
 (async () => {
