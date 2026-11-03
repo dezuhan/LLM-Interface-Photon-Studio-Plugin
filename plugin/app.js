@@ -200,44 +200,93 @@ function renderAttachments(images) {
   return row;
 }
 
-const TOOL_STATE_LABEL = { ok: "done", error: "failed", denied: "declined", pending: "running" };
-
-function addToolCard(name, args, options) {
+/**
+ * One collapsible "process" block per turn: every tool call of that turn lands inside it,
+ * entries update in place, and the header title follows the operation being run.
+ * It starts expanded (the user asked for "not collapsed by default") and can be folded by hand.
+ */
+function createProcessGroup() {
   if (el.emptyHint && el.emptyHint.parentNode) el.emptyHint.remove();
-  const streaming = Boolean(options && options.streaming);
-  const card = document.createElement("details");
-  card.className = "tool";
-  card.dataset.state = streaming ? "pending" : "ok";
-  // Streaming cards stay open so the work is visible; restored history stays folded.
-  card.open = streaming;
-  const summary = document.createElement("summary");
-  const label = name.replace(/^photon_/, "");
-  summary.textContent = streaming ? label + " · running" : label;
-  summary.dataset.label = label;
-  const code = document.createElement("pre");
-  code.className = "code";
-  code.textContent = JSON.stringify(args || {}, null, 1);
-  card.append(summary, code);
-  el.messages.append(card);
-  scrollToEnd();
-  return card;
-}
+  const group = document.createElement("details");
+  group.className = "process";
+  group.open = true;
+  group.dataset.state = "running";
 
-function updateToolCard(card, state, output) {
-  if (!card) return;
-  card.dataset.state = state;
-  const summary = card.querySelector("summary");
-  if (summary) {
-    const label = summary.dataset.label || summary.textContent;
-    summary.dataset.label = label;
-    summary.textContent = label + " · " + (TOOL_STATE_LABEL[state] || state);
+  const summary = document.createElement("summary");
+  const title = document.createElement("span");
+  title.className = "process-title";
+  title.textContent = "Starting…";
+  const meta = document.createElement("span");
+  meta.className = "process-meta";
+  meta.textContent = "0 operations";
+  summary.append(title, meta);
+
+  const body = document.createElement("div");
+  body.className = "process-body";
+  group.append(summary, body);
+  el.messages.append(group);
+
+  const items = [];
+  let count = 0;
+
+  function plural() {
+    return count + (count === 1 ? " operation" : " operations");
   }
-  if (output === undefined) return;
-  const code = card.querySelector(".code");
-  if (!code) return;
-  const text = typeof output === "string" ? output : JSON.stringify(output, null, 1);
-  code.textContent = code.textContent + "\n→ " + (text.length > 1400 ? text.slice(0, 1400) + "…" : text);
-  scrollToEnd();
+
+  return {
+    group,
+    /** Append one operation row; becomes the "current" row until it reports a result. */
+    addOperation(name, args) {
+      count += 1;
+      const label = String(name || "tool").replace(/^photon_/, "");
+      const row = document.createElement("div");
+      row.className = "op";
+      row.dataset.state = "pending";
+
+      const head = document.createElement("div");
+      head.className = "op-head";
+      const nameEl = document.createElement("span");
+      nameEl.className = "op-name";
+      nameEl.textContent = label;
+      const stateEl = document.createElement("span");
+      stateEl.className = "op-state";
+      stateEl.textContent = "running";
+      head.append(nameEl, stateEl);
+
+      const code = document.createElement("pre");
+      code.className = "op-code";
+      code.textContent = JSON.stringify(args || {}, null, 1);
+
+      row.append(head, code);
+      body.append(row);
+
+      title.textContent = label;
+      meta.textContent = plural();
+      scrollToEnd();
+      const item = { row, stateEl, code };
+      items.push(item);
+      return item;
+    },
+    /** Update the newest row that has not finished yet. */
+    update(state, output) {
+      const item = items.slice().reverse().find((entry) => entry.row.dataset.state === "pending");
+      if (!item) return;
+      item.row.dataset.state = state;
+      item.stateEl.textContent = state === "ok" ? "done" : state === "error" ? "failed" : "declined";
+      if (output === undefined) return;
+      const text = typeof output === "string" ? output : JSON.stringify(output, null, 1);
+      item.code.textContent = item.code.textContent + "\n→ " + (text.length > 1200 ? text.slice(0, 1200) + "…" : text);
+      scrollToEnd();
+    },
+    /** Close the turn: header settles on the outcome, stays expanded for the user. */
+    finish(state, elapsedMs) {
+      group.dataset.state = state;
+      const label =
+        state === "ok" ? "Process" : state === "error" ? "Process stopped on an error" : "Process stopped";
+      title.textContent = label;
+      meta.textContent = plural() + (elapsedMs ? " · " + Math.round(elapsedMs) + " ms" : "");
+    },
+  };
 }
 
 /* ---------- settings ---------- */
@@ -359,10 +408,8 @@ function renderMessage(message) {
     if (message.text) addMessage("assistant", message.text);
     return;
   }
-  if (message.role === "tool") {
-    const card = addToolCard(message.name || "tool result", {});
-    updateToolCard(card, "ok", message.text);
-  }
+  // tool messages are grouped by renderConversation
+
 }
 
 function renderConversation() {
@@ -380,7 +427,18 @@ function renderConversation() {
     el.emptyHint = hint;
   } else {
     el.emptyHint = null;
-    for (const message of messages) renderMessage(message);
+    let process = null;
+    for (const message of messages) {
+      if (message.role === "tool") {
+        if (!process) process = createProcessGroup();
+        process.addOperation(message.name || "tool", {});
+        process.update("ok", message.text);
+        continue;
+      }
+      process = null;
+      renderMessage(message);
+    }
+    if (process) process.finish("ok", 0);
   }
   renderConversations();
 }
@@ -589,6 +647,7 @@ async function send() {
   if (running) return;
   const text = el.prompt.value.trim();
   if (!text) return;
+  const started = performance.now();
 
   el.prompt.value = "";
   if (el.emptyHint && el.emptyHint.parentNode) el.emptyHint.remove();
@@ -615,7 +674,8 @@ async function send() {
   badge("Thinking…", "busy");
   setStatus("running");
 
-  const cards = [];
+  let process = null;
+  let turnState = "ok";
   const runner = Agent.createRunner({
     api,
     callModel,
@@ -626,16 +686,15 @@ async function send() {
     shouldStop: () => stopRequested,
     onEvent(event) {
       if (event.type === "assistant" && event.text) addMessage("assistant", event.text);
-      else if (event.type === "tool") cards.push(addToolCard(event.name, event.arguments, { streaming: true }));
-      else if (event.type === "result") {
-        const card = cards.find((item) => item.dataset.state === "pending");
-        updateToolCard(card, "ok", event.output);
+      else if (event.type === "tool") {
+        if (!process) process = createProcessGroup();
+        process.addOperation(event.name, event.arguments);
+      } else if (event.type === "result") {
+        if (process) process.update("ok", event.output);
       } else if (event.type === "executed") {
-        const card = cards.find((item) => item.dataset.state === "pending");
-        updateToolCard(card, "ok", event.result);
+        if (process) process.update("ok", event.result);
       } else if (event.type === "failed") {
-        const card = cards.find((item) => item.dataset.state === "pending");
-        updateToolCard(card, "error", event.error);
+        if (process) process.update("error", event.error);
       }
     },
   });
@@ -650,10 +709,12 @@ async function send() {
   } catch (error) {
     const message = errText(error);
     if (/stopped by the user/i.test(message)) {
+      turnState = "stopped";
       addMessage("error", "Stopped.");
       badge("Stopped", "busy");
       setStatus("stopped");
     } else {
+      turnState = "error";
       addMessage("error", compactError(message));
       badge("Failed", "danger");
       setStatus("failed");
@@ -662,9 +723,8 @@ async function send() {
     running = false;
     el.send.disabled = false;
     el.stop.hidden = true;
-    // The turn is over: fold the operation cards so the transcript stays compact.
-    // They are plain <details>, so the user can reopen any of them.
-    for (const card of cards) card.open = false;
+    // The turn is over: settle the group header (it stays expanded, the user can fold it).
+    if (process) process.finish(turnState, performance.now() - started);
     if (window.syncCustomSelects) window.syncCustomSelects();
   }
 }

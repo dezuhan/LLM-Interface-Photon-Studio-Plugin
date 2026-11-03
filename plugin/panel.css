@@ -378,33 +378,54 @@ select:focus-visible {
   box-shadow: inset 0 0 0 1px var(--ag-danger);
 }
 
-.tool {
+/* ---------- one process group per turn ---------- */
+
+.process {
   border-radius: var(--ag-radius-control);
   box-shadow: var(--ag-hairline);
   background: var(--ag-raise), var(--ag-control);
   overflow: hidden;
 }
 
-.tool > summary {
+.process > summary {
   display: flex;
   align-items: center;
   gap: 6px;
   min-height: 24px;
   padding: 5px 8px;
   cursor: pointer;
-  color: var(--ag-muted);
+  color: var(--ag-text);
   font-size: 10px;
   font-weight: 600;
   list-style: none;
 }
 
-/* collapse affordance: chevron points right when closed, down when open */
-.tool > summary::after {
+.process > summary::-webkit-details-marker {
+  display: none;
+}
+
+.process-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.process-meta {
+  margin-left: auto;
+  color: var(--ag-soft);
+  font-weight: 500;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* chevron: right when folded, down when expanded */
+.process > summary::after {
   content: "";
   flex: none;
   width: 8px;
   height: 8px;
-  margin-left: auto;
+  margin-left: 2px;
   background-color: currentColor;
   -webkit-mask: var(--ag-chevron) center / 8px 8px no-repeat;
   mask: var(--ag-chevron) center / 8px 8px no-repeat;
@@ -412,35 +433,70 @@ select:focus-visible {
   transition: transform 0.19s ease;
 }
 
-.tool[open] > summary::after {
+.process[open] > summary::after {
   transform: rotate(0deg);
 }
 
-.tool > summary::-webkit-details-marker {
-  display: none;
-}
-
-.tool[data-state="ok"] > summary {
-  color: var(--ag-text);
-}
-
-.tool[data-state="denied"] > summary,
-.tool[data-state="error"] > summary {
+.process[data-state="error"] > summary,
+.process[data-state="stopped"] > summary {
   color: var(--ag-danger);
 }
 
-.code {
-  margin: 0;
-  padding: 7px 9px;
+.process-body {
+  display: flex;
+  flex-direction: column;
   border-top: 1px solid var(--ag-line);
+}
+
+.op {
+  padding: 5px 8px;
+  border-top: 1px solid var(--ag-line);
+}
+
+.op:first-child {
+  border-top: 0;
+}
+
+.op-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 10px;
+}
+
+.op-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--ag-text);
+  font-weight: 600;
+}
+
+.op-state {
+  margin-left: auto;
+  color: var(--ag-soft);
+  white-space: nowrap;
+}
+
+.op[data-state="error"] .op-state {
+  color: var(--ag-danger);
+}
+
+.op-code {
+  margin: 3px 0 0;
+  padding: 0;
+  max-height: 92px;
+  overflow: auto;
   color: var(--ag-muted);
   font-family: inherit;
   font-size: 10px;
-  line-height: 15px;
+  line-height: 14px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  max-height: 160px;
-  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--ag-soft) transparent;
 }
 
 .composer {

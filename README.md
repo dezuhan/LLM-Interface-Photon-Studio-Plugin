@@ -189,6 +189,19 @@ node tools/images-test.cjs      # 13 tests — mime detection, 1 MB ladder, clip
 
 ## Changelog
 
+### 0.4.0
+
+- Operations of one turn are now **one grouped process block** instead of separate cards: a single
+  collapsible container whose header shows the operation currently running and a counter
+  (`find operations · 3 operations`), with each operation as a row inside it that updates in place
+  from `running` to `done`/`failed`.
+- The group stays **expanded by default** (nothing is auto-collapsed), so the process is readable
+  while it streams; one click on the header folds it, which keeps long chats compact.
+- When the turn ends the header settles on `Process · N operations · X ms` (or
+  `Process stopped on an error`), and restored history renders its tool messages as a single
+  folded-free group too.
+- Fixed the earlier squashing: `.messages > * { flex: 0 0 auto }` keeps full height and scrolls.
+
 ### 0.3.6
 
 - Fixed the operation cards collapsing into thin bars: the message list is a flex column, and its
