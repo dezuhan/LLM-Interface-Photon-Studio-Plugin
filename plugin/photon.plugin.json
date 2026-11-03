@@ -1,0 +1,50 @@
+{
+  "manifestVersion": 1,
+  "sdkVersion": 1,
+  "id": "photon-llm-interface",
+  "name": "AI Agent",
+  "version": "0.1.0",
+  "main": "index.html",
+  "panels": [
+    {
+      "id": "agent",
+      "label": "AI Agent",
+      "ui": "custom",
+      "minimumSize": { "width": 380, "height": 560 }
+    }
+  ],
+  "commands": [
+    {
+      "id": "agent.open",
+      "label": "Open AI Agent",
+      "scope": "document",
+      "panel": "agent",
+      "menu": "Plugins",
+      "binding": "Ctrl+Shift+A",
+      "keywords": ["ai", "agent", "llm", "chat", "assistant", "anthropic", "openai", "deepseek"]
+    }
+  ],
+  "permissions": {
+    "document": "readWrite",
+    "credentials": true,
+    "customEndpoints": true,
+    "network": [
+      "https://api.openai.com",
+      "https://api.anthropic.com",
+      "https://generativelanguage.googleapis.com",
+      "https://api.deepseek.com",
+      "https://openrouter.ai",
+      "https://api.groq.com",
+      "https://api.together.ai",
+      "https://api.mistral.ai",
+      "https://api.x.ai"
+    ],
+    "credentialOrigins": {
+      "https://api.openai.com": ["https://api.openai.com"],
+      "https://api.anthropic.com": ["https://api.anthropic.com"],
+      "https://generativelanguage.googleapis.com": ["https://generativelanguage.googleapis.com"],
+      "https://api.deepseek.com": ["https://api.deepseek.com"],
+      "https://openrouter.ai": ["https://openrouter.ai"]
+    }
+  }
+}

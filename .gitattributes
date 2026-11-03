@@ -1,0 +1,28 @@
+﻿# Keep the repository normalized but let each platform get the line endings it needs.
+# Without this, a Windows contributor with core.autocrlf=true would commit CRLF into the
+# POSIX scripts and they would fail on macOS/Linux ("bad interpreter").
+
+* text=auto eol=lf
+
+# POSIX launchers and autostart helpers must stay LF.
+*.sh text eol=lf
+
+# Windows-only helpers: CRLF is what cmd.exe / PowerShell / WSH expect.
+*.cmd text eol=crlf
+*.bat text eol=crlf
+*.ps1 text eol=crlf
+*.vbs text eol=crlf
+
+# Archives and binaries are never line-ending converted.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.zip binary
+*.bin binary
+*.exe binary
+*.dll binary
+
+# Model topology files are plain text.
+*.param text eol=lf
+

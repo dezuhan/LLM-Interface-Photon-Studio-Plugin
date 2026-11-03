@@ -1,0 +1,16 @@
+# OS noise
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Editors
+.vscode/
+.idea/
+
+# Node (only used by the headless tests)
+node_modules/
+npm-debug.log*
+
+# Local artefacts
+*.log
+tools/out/

@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>AI Agent</title>
+    <link rel="stylesheet" href="panel.css" />
+  </head>
+  <body>
+    <main class="panel">
+      <header class="panel-head">
+        <h1 class="title">AI Agent</h1>
+        <span id="badge" class="badge ok">Idle</span>
+      </header>
+
+      <div class="tabs" role="tablist">
+        <button id="tabChat" class="tab active" type="button" role="tab">Chat</button>
+        <button id="tabSettings" class="tab" type="button" role="tab">Settings</button>
+      </div>
+
+      <section id="chat" class="view">
+        <div id="messages" class="messages">
+          <p class="empty" id="emptyHint">
+            Ask for an edit in plain language. The agent reads the document, finds the right
+            Photon operation, shows you what it will run, then applies it as one undoable step.
+          </p>
+        </div>
+
+        <div class="composer">
+          <textarea id="prompt" rows="3" placeholder="e.g. rename the selected layer to Hero and set its opacity to 80%"></textarea>
+          <div class="actions">
+            <button id="send" class="button" type="button">Send</button>
+            <button id="stop" class="button cancel" type="button" hidden>Stop</button>
+          </div>
+        </div>
+      </section>
+
+      <section id="settings" class="view" hidden>
+        <div class="field">
+          <label class="label" for="provider">Provider</label>
+          <span class="select">
+            <select id="provider">
+              <option value="openai" selected>OpenAI-compatible</option>
+              <option value="anthropic">Anthropic</option>
+              <option value="gemini">Google Gemini</option>
+            </select>
+            <span class="chevron" aria-hidden="true"></span>
+          </span>
+          <p class="hint" id="providerHint">OpenAI, DeepSeek, OpenRouter, Groq, Ollama, LM Studio</p>
+        </div>
+
+        <div class="field">
+          <label class="label" for="baseUrl">Base URL</label>
+          <input id="baseUrl" class="input" type="text" spellcheck="false" placeholder="https://api.openai.com/v1" />
+        </div>
+
+        <div class="field">
+          <label class="label" for="model">Model</label>
+          <input id="model" class="input" type="text" spellcheck="false" placeholder="gpt-4.1-mini" />
+        </div>
+
+        <div class="field">
+          <span class="label">API key</span>
+          <div class="key-row">
+            <span id="keyState" class="hint">Not configured</span>
+            <button id="configureKey" class="button small" type="button">Set key</button>
+            <button id="forgetKey" class="button small" type="button" hidden>Forget</button>
+          </div>
+          <label class="check">
+            <input type="checkbox" id="keyless" />
+            <span>No key (local server, e.g. Ollama)</span>
+          </label>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label class="label" for="temperature">Temperature</label>
+            <input id="temperature" class="input" type="number" min="0" max="2" step="0.1" value="0.2" />
+          </div>
+          <div class="field">
+            <label class="label" for="maxSteps">Max steps</label>
+            <input id="maxSteps" class="input" type="number" min="1" max="20" step="1" value="6" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label" for="allowlist">Operation allowlist</label>
+          <span class="select">
+            <select id="allowlist">
+              <option value="safe" selected>Safe — block destructive operations</option>
+              <option value="all">All — allow every non-external operation</option>
+            </select>
+            <span class="chevron" aria-hidden="true"></span>
+          </span>
+        </div>
+
+        <label class="check">
+          <input type="checkbox" id="confirm" checked />
+          <span>Ask before each change</span>
+        </label>
+
+        <div class="actions">
+          <button id="save" class="button" type="button">Save</button>
+          <button id="test" class="button cancel" type="button">Test connection</button>
+        </div>
+
+        <p id="testResult" class="reason info" hidden></p>
+      </section>
+
+      <footer class="panel-footer">
+        <span id="status">not connected</span>
+        <button id="clear" class="link-button" type="button">Clear chat</button>
+      </footer>
+    </main>
+
+    <div class="overlay" id="confirmOverlay" hidden>
+      <div class="overlay-card" role="dialog" aria-label="Confirm operation">
+        <header class="overlay-head">
+          <span class="label">Confirm operation</span>
+        </header>
+        <div class="confirm-body">
+          <p id="confirmDesc" class="hint"></p>
+          <pre id="confirmArgs" class="code"></pre>
+        </div>
+        <div class="overlay-foot">
+          <button id="confirmCancel" class="button small" type="button">Cancel</button>
+          <button id="confirmApply" class="button small" type="button">Apply</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="select.js"></script>
+    <script src="providers.js"></script>
+    <script src="agent.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
