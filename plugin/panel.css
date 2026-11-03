@@ -36,6 +36,8 @@
   --ag-font: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
   --ag-shadow-popup: 0 12px 34px rgba(0, 0, 0, 0.35);
   --ag-chevron: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 10'%3E%3Cpath d='M2 3.75 5 6.75 8 3.75' fill='none' stroke='%23000' stroke-width='1.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  /* paperclip for the icon-only attach button */
+  --ag-clip: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M16.5 6.75v9.25a4.5 4.5 0 0 1-9 0V6a3 3 0 0 1 6 0v9.5a1.5 1.5 0 0 1-3 0V6.75' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 }
 
 html[data-photon-theme="dark"],
@@ -509,6 +511,26 @@ textarea::placeholder,
 
 .actions .button {
   flex: 1 1 auto;
+}
+
+/* Icon-only button: square, same height as the row, tooltip carries the label. */
+.button.icon {
+  flex: 0 0 auto;
+  width: var(--ag-control-height);
+  padding: 0;
+  color: var(--ag-muted);
+}
+
+.button.icon:hover:not(:disabled) {
+  color: var(--ag-text);
+}
+
+.icon-clip {
+  width: 13px;
+  height: 13px;
+  background-color: currentColor;
+  -webkit-mask: var(--ag-clip) center / 13px 13px no-repeat;
+  mask: var(--ag-clip) center / 13px 13px no-repeat;
 }
 
 /* ---------- controls ---------- */

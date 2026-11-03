@@ -20,8 +20,8 @@ no proxy.
 
 ## Image attachments
 
-Press **Attach image** next to the composer and pick a file, or **paste an image with Ctrl+V**
-straight from a screenshot tool or browser. Both routes share the same pipeline in
+Press the **paperclip** button next to the composer and pick a file, or **paste an image with
+Ctrl+V** straight from a screenshot tool or browser. Both routes share the same pipeline in
 `plugin/images.js`:
 
 1. Reject anything that is not PNG, JPEG, GIF or WebP (magic bytes, not just the extension).
@@ -187,6 +187,12 @@ node tools/images-test.cjs      # 13 tests — mime detection, 1 MB ladder, clip
   model to ignore instructions found there, but a confirmation dialog is still the real guard.
 
 ## Changelog
+
+### 0.3.2
+
+- The attach control is now an **icon-only paperclip button** (square, same height as Send) with
+  the label in its tooltip/aria-label, so the composer row is `[📎] [Send]` instead of a wide
+  text button.
 
 ### 0.3.1
 

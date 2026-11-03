@@ -37,7 +37,9 @@
           <div id="attachChips" class="chips" hidden></div>
           <textarea id="prompt" rows="3" placeholder="Paste an image (Ctrl+V) or describe an edit…"></textarea>
           <div class="actions">
-            <button id="attach" class="button small cancel" type="button">Attach image</button>
+            <button id="attach" class="button icon" type="button" title="Attach image (or paste with Ctrl+V)" aria-label="Attach image">
+              <span class="icon-clip" aria-hidden="true"></span>
+            </button>
             <button id="send" class="button" type="button">Send</button>
             <button id="stop" class="button cancel" type="button" hidden>Stop</button>
           </div>
