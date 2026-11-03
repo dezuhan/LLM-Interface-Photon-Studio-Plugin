@@ -188,6 +188,13 @@ node tools/images-test.cjs      # 13 tests — mime detection, 1 MB ladder, clip
 
 ## Changelog
 
+### 0.3.3
+
+- Fixed: the **Settings** view could not be scrolled, so at the panel's minimum size the
+  conversation buttons, **Save** and **Test connection** were unreachable. The panel now uses a
+  fixed height with `#settings` as its own scroll container (verified at 380×560: content is
+  572 px tall, viewport 308 px, everything reachable).
+
 ### 0.3.2
 
 - The attach control is now an **icon-only paperclip button** (square, same height as Send) with
