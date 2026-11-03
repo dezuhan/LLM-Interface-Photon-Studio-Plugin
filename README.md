@@ -20,7 +20,9 @@ no proxy.
 
 ## Image attachments
 
-Press **Attach image** next to the composer and pick a file. The pipeline in `plugin/images.js`:
+Press **Attach image** next to the composer and pick a file, or **paste an image with Ctrl+V**
+straight from a screenshot tool or browser. Both routes share the same pipeline in
+`plugin/images.js`:
 
 1. Reject anything that is not PNG, JPEG, GIF or WebP (magic bytes, not just the extension).
 2. If the file is **≤ 1 MB and at most 1568 px** on its longest edge, it is sent untouched — a
@@ -29,6 +31,9 @@ Press **Attach image** next to the composer and pick a file. The pipeline in `pl
    ladder **1568 → 1024 → 768 → 512 → 384 → 256 px**, stopping at the first size that fits 1 MB.
 4. If even 256 px does not fit (practically impossible), the attachment is refused with a message
    instead of silently sending something huge.
+
+Pasting text is untouched: the panel only intercepts a paste when the clipboard actually carries
+an image file.
 
 Notes:
 
@@ -158,7 +163,7 @@ tools/
   agent-test.cjs       headless tests: loop, safety rails, adapters, image payloads
   markdown-test.cjs    headless tests: formatting and HTML escaping
   store-test.cjs       headless tests: conversations, caps, isolation, migration
-  images-test.cjs      headless tests: mime detection and the 1 MB compression ladder
+  images-test.cjs      headless tests: mime detection, clipboard items, 1 MB ladder
 ```
 
 `agent.js`, `providers.js`, `markdown.js`, `images.js` and `store.js` take no host dependency, so
@@ -168,7 +173,7 @@ everything is testable in Node with no Photon and no API key:
 node tools/agent-test.cjs       # 24 tests — loop, allowlist, confirm, adapters, images, history
 node tools/markdown-test.cjs    # 10 tests — formatting, escaping, link safety
 node tools/store-test.cjs       # 17 tests — conversations, caps, isolation, import/export
-node tools/images-test.cjs      # 10 tests — mime detection, 1 MB ladder, refusals
+node tools/images-test.cjs      # 13 tests — mime detection, 1 MB ladder, clipboard items
 ```
 
 ## Limitations
@@ -182,6 +187,17 @@ node tools/images-test.cjs      # 10 tests — mime detection, 1 MB ladder, refu
   model to ignore instructions found there, but a confirmation dialog is still the real guard.
 
 ## Changelog
+
+### 0.3.1
+
+- **Paste image from the clipboard** (`Ctrl+V`) anywhere in the panel: screenshot tools and
+  browsers put a PNG on the clipboard and it goes through the same 1 MB pipeline as a picked
+  file. Text paste is untouched — the handler only intercepts a paste when an image file is
+  actually present.
+- `images.js` gained `collectImageItems()` / `isImageMime()` so the clipboard parsing is pure and
+  tested (`tools/images-test.cjs` now 13 tests).
+- Composer placeholder mentions pasting, and the status line reports the same
+  `attached / compressed from` detail for both routes.
 
 ### 0.3.0
 

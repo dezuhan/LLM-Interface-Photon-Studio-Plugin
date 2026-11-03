@@ -693,11 +693,27 @@ function renderPendingChips() {
   });
 }
 
+function describeAttachment(prepared) {
+  return (
+    Images.formatBytes(prepared.bytes) +
+    (prepared.compressed ? " (compressed from " + Images.formatBytes(prepared.originalBytes) + ")" : "")
+  );
+}
+
+function canAttachMore() {
+  if (pendingImages.length < Images.MAX_ATTACHMENTS) return true;
+  setStatus("At most " + Images.MAX_ATTACHMENTS + " images per message.");
+  return false;
+}
+
+function addPreparedImage(prepared) {
+  pendingImages.push(prepared);
+  renderPendingChips();
+  setStatus("Attached " + describeAttachment(prepared));
+}
+
 async function attachImage() {
-  if (pendingImages.length >= Images.MAX_ATTACHMENTS) {
-    setStatus("At most " + Images.MAX_ATTACHMENTS + " images per message.");
-    return;
-  }
+  if (!canAttachMore()) return;
   try {
     const source = await api.files.pick();
     if (!source) return;
@@ -705,17 +721,32 @@ async function attachImage() {
     const bytes = await api.files.read(source);
     const name = String(source).split(/[\\/]/).pop() || "image";
     // 1 MB ceiling: Images.prepare downscales through Photon's encoder until it fits.
-    const prepared = await Images.prepare({ api, bytes, name });
-    pendingImages.push(prepared);
-    renderPendingChips();
-    setStatus(
-      "Attached " +
-        Images.formatBytes(prepared.bytes) +
-        (prepared.compressed ? " (compressed from " + Images.formatBytes(prepared.originalBytes) + ")" : ""),
-    );
+    addPreparedImage(await Images.prepare({ api, bytes, name }));
   } catch (error) {
     setStatus("attach failed: " + errText(error));
   }
+}
+
+/** A pasted clipboard image goes through the same 1 MB pipeline as a picked file. */
+async function attachPastedImage(file) {
+  if (!canAttachMore()) return;
+  try {
+    setStatus("reading pasted image…");
+    const bytes = new Uint8Array(await file.arrayBuffer());
+    const name = file.name || "pasted image";
+    addPreparedImage(await Images.prepare({ api, bytes, name }));
+  } catch (error) {
+    setStatus("paste failed: " + errText(error));
+  }
+}
+
+function wirePaste() {
+  document.addEventListener("paste", (event) => {
+    const images = Images.collectImageItems(event.clipboardData && event.clipboardData.items);
+    if (!images.length) return; // normal text paste keeps its default behaviour
+    event.preventDefault();
+    for (const entry of images) void attachPastedImage(entry.file);
+  });
 }
 
 /* ---------- wiring ---------- */
@@ -725,6 +756,7 @@ function wire() {
   el.tabSettings.addEventListener("click", () => showView("settings"));
   el.send.addEventListener("click", () => void send());
   el.attach.addEventListener("click", () => void attachImage());
+  wirePaste();
   el.stop.addEventListener("click", () => {
     stopRequested = true;
     badge("Stopping…", "busy");

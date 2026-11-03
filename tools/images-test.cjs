@@ -123,6 +123,35 @@ test("ladder ends at 256px", () => {
   assert.ok(ladder.every((edge) => edge <= Images.MAX_EDGE));
 });
 
+test("isImageMime accepts the supported types", () => {
+  for (const mime of ["image/png", "image/jpeg", "image/jpg", "image/gif", "image/webp", "image/PNG"]) {
+    assert.equal(Images.isImageMime(mime), true, mime);
+  }
+  for (const mime of ["text/plain", "application/pdf", "image/svg+xml", "", null]) {
+    assert.equal(Images.isImageMime(mime), false, String(mime));
+  }
+});
+
+test("collectImageItems keeps image files and skips text", () => {
+  const clipboardImage = { name: "clip.png", arrayBuffer: async () => new ArrayBuffer(8) };
+  const items = [
+    { kind: "string", type: "text/plain", getAsFile: () => null },
+    { kind: "file", type: "image/png", getAsFile: () => clipboardImage },
+    { kind: "file", type: "application/pdf", getAsFile: () => ({ name: "doc.pdf" }) },
+    { kind: "file", type: "image/jpeg", getAsFile: () => null },
+  ];
+  const found = Images.collectImageItems(items);
+  assert.equal(found.length, 1);
+  assert.equal(found[0].file, clipboardImage);
+  assert.equal(found[0].type, "image/png");
+});
+
+test("collectImageItems tolerates a missing clipboard", () => {
+  assert.deepEqual(Images.collectImageItems(null), []);
+  assert.deepEqual(Images.collectImageItems(undefined), []);
+  assert.deepEqual(Images.collectImageItems({}), []);
+});
+
 (async () => {
   let failed = 0;
   for (const [name, fn] of tests) {

@@ -57,6 +57,31 @@
     return "";
   }
 
+  function isImageMime(mime) {
+    return /^image\/(png|jpeg|jpg|gif|webp)$/i.test(String(mime || ""));
+  }
+
+  /**
+   * Image files carried by a clipboard/drag payload (DataTransferItemList look-alike).
+   * Returns [{ file, type }] and ignores text items so normal text paste still works.
+   */
+  function collectImageItems(items) {
+    const found = [];
+    const list = items && typeof items.length === "number" ? items : [];
+    for (let index = 0; index < list.length; index += 1) {
+      const item = list[index];
+      if (!item || item.kind !== "file" || !isImageMime(item.type)) continue;
+      let file = null;
+      try {
+        file = typeof item.getAsFile === "function" ? item.getAsFile() : null;
+      } catch {
+        file = null;
+      }
+      if (file) found.push({ file, type: item.type });
+    }
+    return found;
+  }
+
   function formatBytes(count) {
     const value = Number(count) || 0;
     if (value < 1024) return value + " B";
@@ -149,6 +174,8 @@
     EDGE_LADDER,
     detectMime,
     mimeFromName,
+    isImageMime,
+    collectImageItems,
     formatBytes,
     toBase64,
     toBytes,
