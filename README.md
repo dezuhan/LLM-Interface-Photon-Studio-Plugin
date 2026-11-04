@@ -69,6 +69,11 @@ node tools/llm-bench.cjs        # markdown, JSON, store and writer timings
 
 ## Changelog
 
+### 0.4.7
+
+- Chat/Settings tabs now use the Image Gen segmented look: padded control plate, equal-width
+  tabs, and the sliding active thumb.
+
 ### 0.4.6
 
 - Fixed the startup crash: the Details/copy footer element references were missing from the

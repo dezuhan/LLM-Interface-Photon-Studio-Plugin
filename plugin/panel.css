@@ -164,6 +164,10 @@ select:focus-visible {
   position: relative;
   display: flex;
   gap: 4px;
+  padding: 3px;
+  border-radius: var(--ag-radius-control);
+  background: var(--ag-control);
+  box-shadow: var(--ag-hairline);
 }
 
 /* ---------- conversation bar ---------- */
@@ -180,23 +184,26 @@ select:focus-visible {
 }
 
 .tab {
-  height: 24px;
-  padding: 0 10px;
+  position: relative;
+  z-index: 1;
+  flex: 1 1 0;
+  height: 22px;
+  padding: 0;
   border: 0;
-  border-radius: var(--ag-radius-control);
+  border-radius: 5px;
   background: transparent;
   color: var(--ag-muted);
   font-size: 11px;
   font-weight: 600;
+  transition: color 160ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .tab:hover {
-  background: var(--ag-control-hover);
   color: var(--ag-text);
 }
 
 .tab.active {
-  background: var(--ag-raise), var(--ag-control-active);
+  background: var(--ag-control-active);
   color: var(--ag-text);
 }
 
@@ -212,12 +219,12 @@ select:focus-visible {
 .tab-thumb {
   position: absolute;
   z-index: 0;
-  top: 0;
-  bottom: 0;
+  top: 3px;
+  bottom: 3px;
   left: 0;
   width: 0;
-  border-radius: var(--ag-radius-control);
-  background: var(--ag-raise), var(--ag-control-active);
+  border-radius: 5px;
+  background: var(--ag-control-active);
   box-shadow: none;
   pointer-events: none;
   opacity: 0;
