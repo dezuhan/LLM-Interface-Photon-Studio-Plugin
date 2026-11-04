@@ -162,6 +162,7 @@ plugin/
   select.js            custom dropdown matching Photon's list design
 tools/
   agent-test.cjs       headless tests: loop, safety rails, adapters, image payloads
+saver-test.cjs       headless tests: debounced saves, flush, cancel, error recovery
   markdown-test.cjs    headless tests: formatting and HTML escaping
   store-test.cjs       headless tests: conversations, caps, isolation, migration
   images-test.cjs      headless tests: mime detection, clipboard items, 1 MB ladder
@@ -172,6 +173,8 @@ everything is testable in Node with no Photon and no API key:
 
 ```powershell
 node tools/agent-test.cjs       # 24 tests — loop, allowlist, confirm, adapters, images, history
+node tools/saver-test.cjs       #  6 tests — debounced writer
+node tools/llm-bench.cjs        # markdown, JSON, store and writer timings
 node tools/markdown-test.cjs    # 10 tests — formatting, escaping, link safety
 node tools/store-test.cjs       # 17 tests — conversations, caps, isolation, import/export
 node tools/images-test.cjs      # 13 tests — mime detection, 1 MB ladder, clipboard items
