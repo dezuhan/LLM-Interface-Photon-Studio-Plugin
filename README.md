@@ -7,6 +7,12 @@ meta-tools, so no third-party harness is involved.
 Supports OpenAI-compatible endpoints (DeepSeek, OpenRouter, Groq, Together, Mistral, Ollama, any
 custom base URL), Anthropic and Gemini.
 
+## Screenshots
+
+| Chat with the agent process block | Settings and API key |
+| --- | --- |
+| ![Chat](docs/chat.png) | ![Settings](docs/settings.png) |
+
 ## Install
 
 1. Photon Studio → **Preferences → Plug-ins → Install plugin** → select this repository's
