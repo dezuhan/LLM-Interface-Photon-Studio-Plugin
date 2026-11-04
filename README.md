@@ -189,6 +189,14 @@ node tools/images-test.cjs      # 13 tests — mime detection, 1 MB ladder, clip
 
 ## Changelog
 
+### 0.4.1
+
+- Conversation saves are **debounced** (600 ms) through `plugin/saver.js`: the chat store used to
+  write the whole settings object (up to ~700 KB) on every message. `dispose()` flushes the pending
+  write, so nothing is lost when the panel closes.
+- `tools/saver-test.cjs` (6 tests) and `tools/llm-bench.cjs` added.
+- Total tests: 70.
+
 ### 0.4.0
 
 - Operations of one turn are now **one grouped process block** instead of separate cards: a single
@@ -296,6 +304,23 @@ node tools/images-test.cjs      # 13 tests — mime detection, 1 MB ladder, clip
 - 0.2 — session history, per-turn token/cost estimate, prompt presets.
 - 0.3 — model list fetching per provider, retry/backoff, better tool-result summaries.
 - 0.4 — optional "plan first" mode that shows the whole action list before applying.
+
+## Performance
+
+Measured with `node tools/llm-bench.cjs` (Node, same code paths as the panel):
+
+| Operation | Cost |
+| --- | --- |
+| `Markdown.render` 1.8 KB plain | 14 µs |
+| `Markdown.render` 7 KB code fence | 66 µs |
+| `Markdown.render` 9 KB mixed | 787 µs |
+| Re-render 60 messages | 15 ms |
+| `JSON.stringify` chat | 143 µs |
+| `JSON.parse` chat | 160 µs |
+
+Conversation saves go through `plugin/saver.js`, a debounced writer (600 ms): a burst of 20 messages
+becomes **one** settings write instead of 20, and `dispose()` flushes anything still pending so
+closing the panel never loses the last turn.
 
 ## License
 

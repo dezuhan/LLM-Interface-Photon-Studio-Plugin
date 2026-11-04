@@ -10,6 +10,7 @@ const SDK = globalThis.__photonSdk;
 const Providers = globalThis.PhotonProviders;
 const Agent = globalThis.PhotonAgent;
 const Store = globalThis.PhotonStore;
+const Saver = globalThis.PhotonSaver;
 const Markdown = globalThis.PhotonMarkdown;
 const Images = globalThis.PhotonImages;
 
@@ -90,6 +91,7 @@ const el = {
 let api = null;
 let settings = { ...DEFAULTS };
 let store = null;
+let saver = null;
 let running = false;
 let stopRequested = false;
 let confirmResolve = null;
@@ -914,14 +916,21 @@ async function init() {
   applySettingsToUi();
   await refreshKeyState();
 
+  // Conversations are saved through a debounced writer: the store hands over the whole chat on
+  // every message, and writing ~700 KB of settings per message is pure I/O.
+  saver = Saver.create({
+    delay: 600,
+    save: async (chat) => {
+      await patchSettings({ chat });
+    },
+  });
+
   store = Store.createStore({
     load: async () => {
       const current = await readPluginSettings();
       return current && current.chat ? current.chat : null;
     },
-    save: async (chat) => {
-      await patchSettings({ chat });
-    },
+    save: (chat) => saver.save(chat),
   });
   await store.hydrate();
   renderConversation();
@@ -933,7 +942,7 @@ async function init() {
 if (!SDK) {
   badge("Failed", "danger");
   setStatus("Photon Plugin SDK is unavailable — open this panel inside Photon Studio.");
-} else if (!Providers || !Agent || !Store || !Markdown || !Images) {
+} else if (!Providers || !Agent || !Store || !Markdown || !Images || !Saver) {
   badge("Failed", "danger");
   setStatus("Plugin scripts failed to load.");
 } else {
@@ -947,6 +956,7 @@ if (!SDK) {
     });
     return {
       dispose() {
+        if (saver) void saver.flush();
         api = null;
       },
     };
