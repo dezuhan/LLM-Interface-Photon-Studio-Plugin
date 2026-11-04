@@ -15,6 +15,12 @@ custom base URL), Anthropic and Gemini.
 | --- | --- |
 | ![Chat](docs/chat.png) | ![Settings](docs/settings.png) |
 
+## Design system
+
+Panel styling, components and tokens follow [`../design-system`](../design-system/README.md):
+24 px controls, 7 px control radius, 12 px floating surfaces, the canonical `select.js`
+dropdown and the shared header/footer contract.
+
 ## Install
 
 1. Photon Studio → **Preferences → Plug-ins → Install plugin** → select this repository's
