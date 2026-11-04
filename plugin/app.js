@@ -88,6 +88,12 @@ const el = {
   confirmArgs: document.getElementById("confirmArgs"),
   confirmApply: document.getElementById("confirmApply"),
   confirmCancel: document.getElementById("confirmCancel"),
+  detailsBtn: document.getElementById("detailsBtn"),
+  serviceBtn: document.getElementById("serviceBtn"),
+  detailsOverlay: document.getElementById("detailsOverlay"),
+  detailsClose: document.getElementById("detailsClose"),
+  detailsLog: document.getElementById("detailsLog"),
+  copyLog: document.getElementById("copyLog"),
 };
 
 let api = null;

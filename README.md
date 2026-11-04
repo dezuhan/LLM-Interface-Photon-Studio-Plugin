@@ -69,6 +69,11 @@ node tools/llm-bench.cjs        # markdown, JSON, store and writer timings
 
 ## Changelog
 
+### 0.4.6
+
+- Fixed the startup crash: the Details/copy footer element references were missing from the
+  panel's element map, so `wireFooter()` called `addEventListener` on `undefined`.
+
 ### 0.4.5
 
 - Removed the duplicate hairline above the footer: the old `.footer-actions` rule no longer adds
