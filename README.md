@@ -1,3 +1,5 @@
+![AI Agent panel writing a layout in Photon Studio](docs/photon.png)
+
 # Photon LLM Interface
 
 Bring-your-own-key AI agent for Photon Studio. Paste an API key, pick a provider and model, then ask
