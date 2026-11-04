@@ -69,6 +69,11 @@ node tools/llm-bench.cjs        # markdown, JSON, store and writer timings
 
 ## Changelog
 
+### 0.4.3
+
+- Footer follows the shared plugin pattern: version left, `Details` and `Check service` right.
+  Details shows a local log; Check service reports the document, provider, model and key state.
+
 ### 0.4.2
 
 - Chat/Settings tabs use the canonical `tabs.js` slider (220 ms ease); the transcript and

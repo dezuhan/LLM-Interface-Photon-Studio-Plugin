@@ -119,6 +119,59 @@ function badge(text, kind) {
   if (el.sep) el.sep.hidden = !state;
 }
 
+let detailsLines = [];
+
+function logDetail(line) {
+  const stamp = new Date().toLocaleTimeString();
+  detailsLines.unshift("[" + stamp + "] " + line);
+  if (detailsLines.length > 200) detailsLines.pop();
+  if (!el.detailsOverlay.hidden) renderDetails();
+}
+
+function renderDetails() {
+  el.detailsLog.textContent = detailsLines.length ? detailsLines.join("\n") : "No log yet.";
+}
+
+function openDetails() {
+  renderDetails();
+  el.detailsOverlay.hidden = false;
+}
+
+async function checkService() {
+  logDetail("check service…");
+  if (!api) {
+    logDetail("SDK: unavailable — open the panel inside Photon Studio.");
+  } else {
+    try {
+      const active = await api.documents.active();
+      if (!active) logDetail("document: none open");
+      else {
+        logDetail(
+          "document: " + (active.title || active.id) + " · " + (active.layers || []).length +
+            " layer(s) · " + (active.selectedLayerIds || []).length + " selected",
+        );
+      }
+      logDetail(
+        "provider: " + (el.provider.value || "?") + " · model: " + (el.model.value || "—") +
+          " · key configured: " + (el.keyState.textContent !== "Not configured" ? "yes" : "no"),
+      );
+    } catch (error) {
+      logDetail("check failed: " + String((error && error.message) || error));
+    }
+  }
+  openDetails();
+}
+
+function wireFooter() {
+  el.detailsBtn.addEventListener("click", openDetails);
+  el.serviceBtn.addEventListener("click", () => void checkService());
+  el.detailsClose.addEventListener("click", () => (el.detailsOverlay.hidden = true));
+  el.detailsOverlay.addEventListener("click", (event) => {
+    if (event.target === el.detailsOverlay) el.detailsOverlay.hidden = true;
+  });
+  logDetail("panel ready · v0.4.3");
+}
+
 function setStatus(text) {
   el.status.textContent = text;
 }
@@ -842,6 +895,7 @@ function wirePaste() {
 /* ---------- wiring ---------- */
 
 function wire() {
+  wireFooter();
   el.tabChat.addEventListener("click", () => showView("chat"));
   el.tabSettings.addEventListener("click", () => showView("settings"));
   el.send.addEventListener("click", () => void send());

@@ -132,9 +132,24 @@
       </section>
 
       <footer class="panel-footer">
-        <span id="status">not connected</span>
-        <span id="convMeta" class="hint"></span>
+        <span id="version">v0.4.3</span>
+        <div class="footer-actions">
+          <button id="detailsBtn" class="link-button" type="button">Details</button>
+          <button id="serviceBtn" class="link-button" type="button">Check service</button>
+        </div>
+        <span id="status" hidden></span>
+        <span id="convMeta" hidden></span>
       </footer>
+
+      <div class="details-overlay" id="detailsOverlay" hidden>
+        <div class="details-card" role="dialog" aria-label="Plugin details and logs">
+          <header class="details-head">
+            <span class="details-title">Details</span>
+            <button id="detailsClose" class="link-button" type="button">Close</button>
+          </header>
+          <pre id="detailsLog" class="details-log log"></pre>
+        </div>
+      </div>
     </main>
 
     <div class="overlay" id="confirmOverlay" hidden>
