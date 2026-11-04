@@ -1092,6 +1092,8 @@ textarea::placeholder,
   display: flex;
   align-items: center;
   gap: 10px;
+  border-top: 0;
+  padding-top: 0;
 }
 
 .link-button {

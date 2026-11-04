@@ -69,6 +69,11 @@ node tools/llm-bench.cjs        # markdown, JSON, store and writer timings
 
 ## Changelog
 
+### 0.4.5
+
+- Removed the duplicate hairline above the footer: the old `.footer-actions` rule no longer adds
+  its own border inside the shared footer.
+
 ### 0.4.4
 
 - Details overlay now has a **copy all logs** icon (system clipboard, with a textarea fallback).
