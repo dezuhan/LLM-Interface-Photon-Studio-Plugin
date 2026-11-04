@@ -67,6 +67,13 @@ node tools/llm-bench.cjs        # markdown, JSON, store and writer timings
 
 70 tests, no Photon and no API key required.
 
+## Changelog
+
+### 0.4.2
+
+- Chat/Settings tabs use the canonical `tabs.js` slider (220 ms ease); the transcript and
+  settings views are unchanged.
+
 ## Limits
 
 - Conversations are JSON in plugin settings (no SQLite in the webview); history beyond the caps is

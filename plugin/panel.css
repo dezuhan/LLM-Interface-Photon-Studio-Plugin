@@ -161,6 +161,7 @@ select:focus-visible {
 }
 
 .tabs {
+  position: relative;
   display: flex;
   gap: 4px;
 }
@@ -198,6 +199,44 @@ select:focus-visible {
   background: var(--ag-raise), var(--ag-control-active);
   color: var(--ag-text);
 }
+
+/* Tabs: sliding active plate (design-system tabs contract). */
+.tabs.has-thumb .tab {
+  background: transparent;
+}
+
+.tabs.has-thumb .tab.active {
+  background: transparent;
+}
+
+.tab-thumb {
+  position: absolute;
+  z-index: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  border-radius: var(--ag-radius-control);
+  background: var(--ag-raise), var(--ag-control-active);
+  box-shadow: none;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.tabs.has-thumb.is-ready .tab-thumb {
+  opacity: 1;
+  transition:
+    left 220ms cubic-bezier(0.4, 0, 0.2, 1),
+    width 220ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 120ms linear;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab-thumb {
+    transition: none !important;
+  }
+}
+
 
 .view {
   display: flex;
