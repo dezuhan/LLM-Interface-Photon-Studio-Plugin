@@ -1165,3 +1165,40 @@ textarea::placeholder,
   line-height: 15px;
   white-space: pre-wrap;
 }
+
+
+/* ---------- details log actions ---------- */
+
+.head-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--ag-muted);
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  background: var(--ag-control-hover);
+  color: var(--ag-text);
+}
+
+.icon-button.is-copied {
+  color: var(--ag-accent);
+}
+
+#status[hidden],
+#meta[hidden],
+#convMeta[hidden] {
+  display: none !important;
+}

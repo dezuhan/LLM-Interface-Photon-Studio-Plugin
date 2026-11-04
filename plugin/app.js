@@ -132,6 +132,30 @@ function renderDetails() {
   el.detailsLog.textContent = detailsLines.length ? detailsLines.join("\n") : "No log yet.";
 }
 
+async function copyAllLogs() {
+  const text = (el.detailsLog && el.detailsLog.textContent) || "No log yet.";
+  const done = () => {
+    el.copyLog.classList.add("is-copied");
+    el.copyLog.title = "Copied";
+    setTimeout(() => {
+      el.copyLog.classList.remove("is-copied");
+      el.copyLog.title = "Copy all logs";
+    }, 1200);
+  };
+  try {
+    await navigator.clipboard.writeText(text);
+    done();
+  } catch {
+    const area = document.createElement("textarea");
+    area.value = text;
+    document.body.append(area);
+    area.select();
+    document.execCommand("copy");
+    area.remove();
+    done();
+  }
+}
+
 function openDetails() {
   renderDetails();
   el.detailsOverlay.hidden = false;
@@ -166,6 +190,7 @@ function wireFooter() {
   el.detailsBtn.addEventListener("click", openDetails);
   el.serviceBtn.addEventListener("click", () => void checkService());
   el.detailsClose.addEventListener("click", () => (el.detailsOverlay.hidden = true));
+  el.copyLog.addEventListener("click", () => void copyAllLogs());
   el.detailsOverlay.addEventListener("click", (event) => {
     if (event.target === el.detailsOverlay) el.detailsOverlay.hidden = true;
   });

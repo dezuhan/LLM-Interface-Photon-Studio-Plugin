@@ -69,6 +69,10 @@ node tools/llm-bench.cjs        # markdown, JSON, store and writer timings
 
 ## Changelog
 
+### 0.4.4
+
+- Details overlay now has a **copy all logs** icon (system clipboard, with a textarea fallback).
+
 ### 0.4.3
 
 - Footer follows the shared plugin pattern: version left, `Details` and `Check service` right.
