@@ -109,7 +109,7 @@ select:focus-visible {
 .panel-head {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .title {
@@ -118,6 +118,22 @@ select:focus-visible {
   font-size: 14px;
   font-weight: 600;
   line-height: 20px;
+}
+
+.state {
+  flex: none;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 16px;
+  color: var(--ag-muted);
+  white-space: nowrap;
+}
+
+.sep {
+  flex: none;
+  font-size: 10px;
+  line-height: 16px;
+  color: var(--ag-soft);
 }
 
 .badge {

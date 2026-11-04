@@ -45,6 +45,8 @@ const SYSTEM_PROMPT = [
 
 const el = {
   badge: document.getElementById("badge"),
+  state: document.getElementById("state"),
+  sep: document.getElementById("sep"),
   tabChat: document.getElementById("tabChat"),
   tabSettings: document.getElementById("tabSettings"),
   chat: document.getElementById("chat"),
@@ -103,9 +105,18 @@ function errText(error) {
   return String((error && error.message) || error || "unknown error");
 }
 
+/**
+ * The badge reports health ("Ready" / "Failed"); the activity word ("Idle", "Thinking...", "Done")
+ * sits to its left, separated by a middle dot.
+ */
 function badge(text, kind) {
-  el.badge.textContent = text;
-  el.badge.className = "badge " + (kind || "ok");
+  const failed = kind === "danger";
+  el.badge.textContent = failed ? "Failed" : "Ready";
+  el.badge.className = "badge " + (failed ? "danger" : "ok");
+  const state = failed ? "" : String(text || "").replace("Ready", "Idle");
+  el.state.textContent = state;
+  el.state.hidden = !state;
+  if (el.sep) el.sep.hidden = !state;
 }
 
 function setStatus(text) {
